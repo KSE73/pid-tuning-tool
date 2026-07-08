@@ -227,7 +227,7 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
   <div class="sb-section">
     <div class="sb-section-header"><div class="sb-section-label"><span class="dot dot-purple"></span>진단함</div><span class="sb-chevron">▾</span></div>
     <div class="sb-items">
-      <a class="sb-item" href="pid_tuning_screen5.html">Plant Triage</a>
+      <a class="sb-item">Plant Triage</a>
       <a class="sb-item">불량 Loop</a>
     </div>
   </div>
@@ -242,9 +242,9 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
 
   <!-- Step bar -->
   <div class="step-bar">
-    <a class="step-item done" href="pid_tuning_screen1.html" style="text-decoration:none;"><div class="step-circle">✓</div><span class="step-label">데이터 수집</span></a>
+    <a class="step-item done" href="pid_tuning_screen1.html" style="text-decoration:none;cursor:pointer"><div class="step-circle">✓</div><span class="step-label">데이터 수집</span></a>
     <div class="step-sep done"></div>
-    <a class="step-item active" style="cursor:default;text-decoration:none"><div class="step-circle">2</div><span class="step-label">트렌드 분석</span></a>
+    <a class="step-item active" style="text-decoration:none;"><div class="step-circle">2</div><span class="step-label">트렌드 분석</span></a>
     <div class="step-sep"></div>
     <a class="step-item" href="pid_tuning_screen3.html" style="text-decoration:none;cursor:pointer"><div class="step-circle">3</div><span class="step-label">모델 식별</span></a>
     <div class="step-sep"></div>
@@ -264,7 +264,7 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
     <div style="display:flex;gap:8px;align-items:center">
       <button class="btn btn-outline btn-sm" onclick="autoDetectRegions()">🔍 구간 자동 추천</button>
       <button class="btn btn-outline btn-sm" onclick="resetZoom()">전체 보기</button>
-      <button class="btn btn-orange btn-sm" id="confirm-btn" disabled onclick="location.href='pid_tuning_screen3.html'">구간 확정 →</button>
+      <button class="btn btn-orange btn-sm" id="confirm-btn" disabled onclick="confirmRegion()">구간 확정 →</button>
     </div>
   </div>
 
@@ -424,8 +424,8 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
     <span id="ab-status">트렌드 차트에서 Tuning 구간을 선택하세요.</span>
   </div>
   <div class="action-bar-right">
-    <button class="btn btn-outline" onclick="location.href='pid_tuning_screen1.html'">← 데이터 수집</button>
-    <button class="btn btn-orange" id="next-btn" disabled onclick="location.href='pid_tuning_screen3.html'">모델 식별로 이동 →</button>
+    <button class="btn btn-outline" onclick="goBack()">← 데이터 수집</button>
+    <button class="btn btn-orange" id="next-btn" disabled onclick="goNext()">모델 식별로 이동 →</button>
   </div>
 </div>
 
@@ -433,10 +433,11 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
 
 <script>
 // ══════════════════════════════════════════
-// DATA — Screen 1에서 업로드된 데이터를 사용
+// DATA GENERATION
 // ══════════════════════════════════════════
-const DATA = [];   // 실제 데이터 없음 — Screen 1에서 파일 업로드 후 진행
-const LABELS = [];
+
+let DATA = [];
+let LABELS = [];
 let viewStart=0, viewEnd=0;
 let selStart=-1, selEnd=-1;
 let interactMode='select';
@@ -459,28 +460,32 @@ const chartDefaults = {
   elements:{point:{radius:0,hoverRadius:3},line:{tension:.3,borderWidth:1.5}}
 };
 
-// ── 빈 차트 초기화 (데이터 없음) ──────────────────
+// PV Chart
 const pvCtx = document.getElementById('pv-chart').getContext('2d');
 document.getElementById('pv-chart').height = 140;
 const pvChart = new Chart(pvCtx,{
   type:'line',
-  data:{labels:[],datasets:[
-    {label:'PV',data:[],borderColor:'#2563EB',backgroundColor:'rgba(37,99,235,.06)',fill:true,order:1},
-    {label:'SV',data:[],borderColor:'#DC2626',borderDash:[4,3],backgroundColor:'transparent',fill:false,order:0},
-  ]},
+  data:{
+    labels:LABELS,
+    datasets:[
+      {label:'PV',data:DATA.map(d=>d.pv),borderColor:'#2563EB',backgroundColor:'rgba(37,99,235,.06)',fill:true,order:1},
+      {label:'SV',data:DATA.map(d=>d.sv),borderColor:'#DC2626',borderDash:[4,3],backgroundColor:'transparent',fill:false,order:0},
+    ]
+  },
   options:{...chartDefaults,
     scales:{...chartDefaults.scales,
       x:{...chartDefaults.scales.x,display:false},
-      y:{...chartDefaults.scales.y,title:{display:true,text:'EU',font:{size:9},color:'#aaa'}}
+      y:{...chartDefaults.scales.y,title:{display:true,text:'°C',font:{size:9},color:'#aaa'}}
     }
   }
 });
 
+// MV Chart
 const mvCtx = document.getElementById('mv-chart').getContext('2d');
 document.getElementById('mv-chart').height = 100;
 const mvChart = new Chart(mvCtx,{
   type:'line',
-  data:{labels:[],datasets:[{label:'MV',data:[],borderColor:'#059669',backgroundColor:'rgba(5,150,105,.06)',fill:true}]},
+  data:{labels:LABELS,datasets:[{label:'MV',data:DATA.map(d=>d.mv),borderColor:'#059669',backgroundColor:'rgba(5,150,105,.06)',fill:true,stepped:false}]},
   options:{...chartDefaults,
     scales:{...chartDefaults.scales,
       x:{...chartDefaults.scales.x,display:false},
@@ -489,23 +494,35 @@ const mvChart = new Chart(mvCtx,{
   }
 });
 
+// MODE Chart
 const modeCtx = document.getElementById('mode-chart').getContext('2d');
 document.getElementById('mode-chart').height = 48;
+const modeColors = DATA.map(d=>d.mode==='AUTO'?'rgba(16,185,129,.7)':'rgba(245,158,11,.7)');
 const modeChart = new Chart(modeCtx,{
   type:'bar',
-  data:{labels:[],datasets:[{label:'MODE',data:[],backgroundColor:[],borderWidth:0,barPercentage:1.0,categoryPercentage:1.0}]},
+  data:{
+    labels:LABELS,
+    datasets:[{label:'MODE',data:DATA.map(d=>d.mode==='AUTO'?1:0.5),
+      backgroundColor:modeColors,borderWidth:0,barPercentage:1.0,categoryPercentage:1.0}]
+  },
   options:{...chartDefaults,
-    scales:{x:{display:false,grid:{display:false}},y:{display:false,min:0,max:1,grid:{display:false}}},
-    plugins:{...chartDefaults.plugins,tooltip:{enabled:false}}
+    scales:{
+      x:{display:false,grid:{display:false}},
+      y:{display:false,min:0,max:1,grid:{display:false}}
+    },
+    plugins:{...chartDefaults.plugins,
+      tooltip:{enabled:false},
+    }
   }
 });
 
+// NAV Chart
 const navCtx = document.getElementById('nav-chart').getContext('2d');
 const navChart = new Chart(navCtx,{
   type:'line',
-  data:{labels:[],datasets:[
-    {label:'PV',data:[],borderColor:'rgba(37,99,235,.5)',borderWidth:1,backgroundColor:'rgba(37,99,235,.05)',fill:true},
-    {label:'MV',data:[],borderColor:'rgba(5,150,105,.4)',borderWidth:1,backgroundColor:'transparent',fill:false}
+  data:{labels:LABELS,datasets:[
+    {label:'PV',data:DATA.map(d=>d.pv),borderColor:'rgba(37,99,235,.5)',borderWidth:1,backgroundColor:'rgba(37,99,235,.05)',fill:true},
+    {label:'MV',data:DATA.map(d=>d.mv),borderColor:'rgba(5,150,105,.4)',borderWidth:1,backgroundColor:'transparent',fill:false}
   ]},
   options:{animation:false,responsive:true,maintainAspectRatio:false,
     plugins:{legend:{display:false},tooltip:{enabled:false}},
@@ -859,22 +876,53 @@ function goNext(){showToast('→ Screen 3 모델 식별로 이동 (구현 예정
 // INIT
 // ══════════════════════════════════════════
 window.addEventListener('load',()=>{
-  if(DATA.length === 0){
+  try {
+    const raw = sessionStorage.getItem('pidData');
+    if (raw) {
+      const payload = JSON.parse(raw);
+      const rows = payload.data || [];
+      rows.forEach(r => {
+        DATA.push({ pv: r.pv, mv: r.mv, sv: r.sv ?? r.pv, mode: (r.mode||'AUTO').toUpperCase() });
+        LABELS.push(r.ts);
+      });
+      const n = DATA.length;
+      if (n > 1) {
+        const t0 = new Date(LABELS[0]), t1 = new Date(LABELS[n-1]);
+        const durMin = isNaN(t0)||isNaN(t1) ? '—' : Math.round((t1-t0)/60000) + ' min';
+        const el = document.getElementById('data-range-info');
+        if (el) el.textContent = n.toLocaleString() + ' points · ' + durMin;
+      }
+      if (payload.filename) {
+        const loopEl = document.getElementById('loop-name');
+        if (loopEl) loopEl.value = payload.filename.replace(/\.[^.]+$/, '').substring(0, 24);
+      }
+    }
+  } catch(e) { console.warn('sessionStorage load fail:', e); }
+
+  if (DATA.length === 0) {
     showEmptyState();
   } else {
     viewEnd = DATA.length - 1;
+    navChart.data.labels = LABELS;
+    navChart.data.datasets[0].data = DATA.map(d => d.pv);
+    navChart.data.datasets[1].data = DATA.map(d => d.mv);
+    navChart.update('none');
     updateChartView();
     setTimeout(autoDetectRegions, 400);
   }
 });
 
-function showEmptyState(){
-  // 차트 영역 위에 빈 상태 오버레이 삽입
-  const chartArea = document.querySelector('.chart-panel') || document.querySelector('.main-content') || document.querySelector('main');
-  const overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;top:48px;left:168px;right:0;bottom:0;background:rgba(245,246,248,0.97);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:50;gap:16px';
-  overlay.innerHTML = `
-    <div style="width:64px;height:64px;background:#FFF0E8;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px">📂</div>
-    <div style="font-size:16px;font-weight:700;color:#1A1A1A">업로드된 데이터가 없습니다</div>
-    <div style="font-size:13px;color:#888;text-align:center;line-height:1.7">Screen 1에서 CSV 또는 Excel 파일을 업로드한 후<br>이 화면으로 이동해 주세요.</div>
-    <a href="pid_tuning_screen1.html" style="margin-top:8px;background:#FF6B2B;color:white;font-size:13px;fo
+window.addEventListener('resize',()=>{
+  updateSelectionOverlay();
+  updateNavBrush();
+});
+
+let _tt;
+function showToast(msg){
+  const el=document.getElementById('toast-el');
+  el.textContent=msg;el.classList.add('show');
+  clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),2800);
+}
+</script>
+</body>
+</html>

@@ -772,7 +772,7 @@ html, body { height: 100%; font-family: 'Pretendard', -apple-system, sans-serif;
   </div>
   <div class="action-bar-right">
     <button class="btn btn-outline" onclick="resetAll()">취소</button>
-    <button class="btn btn-orange" onclick="location.href='pid_tuning_screen2.html'">트렌드 분석으로 이동 →</button>
+    <button class="btn btn-orange" onclick="saveAndGo()">트렌드 분석으로 이동 →</button>
   </div>
 </div>
 
@@ -1113,6 +1113,40 @@ function toast(msg) {
 // ─── Helpers ──────────────────────────────────
 function show(id){ const e=document.getElementById(id); if(e) e.classList.remove('hidden'); }
 function hide(id){ const e=document.getElementById(id); if(e) e.classList.add('hidden'); }
+
+function saveAndGo(){
+  try {
+    const tsCol   = S.mapping.ts   || '';
+    const pvCol   = S.mapping.pv   || '';
+    const mvCol   = S.mapping.mv   || '';
+    const svCol   = S.mapping.sv   || '';
+    const modeCol = S.mapping.mode || '';
+
+    const data = S.data.map(row => {
+      const tsRaw = row[tsCol];
+      const ts = tsRaw instanceof Date ? tsRaw.toISOString()
+               : (typeof tsRaw === 'string' ? tsRaw
+               : (typeof tsRaw === 'number' ? new Date((tsRaw - 25569)*86400*1000).toISOString() : null));
+      return {
+        ts:   ts,
+        pv:   pvCol   ? parseFloat(row[pvCol])   : null,
+        mv:   mvCol   ? parseFloat(row[mvCol])   : null,
+        sv:   svCol   ? parseFloat(row[svCol])   : null,
+        mode: modeCol ? String(row[modeCol]||'') : 'AUTO'
+      };
+    }).filter(r => r.ts && r.pv !== null && !isNaN(r.pv));
+
+    const payload = {
+      data,
+      filename: S.file || '',
+      mapping: S.mapping
+    };
+    sessionStorage.setItem('pidData', JSON.stringify(payload));
+    location.href = 'pid_tuning_screen2.html';
+  } catch(err) {
+    alert('데이터 저장 오류: ' + err.message);
+  }
+}
 </script>
 </body>
 </html>
