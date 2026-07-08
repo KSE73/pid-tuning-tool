@@ -298,7 +298,7 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
   <!-- Loop bar -->
   <div class="loop-bar">
     <span class="loop-bar-label">Loop</span>
-    <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600">TIC-101</span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600" id="loop-name">—</span>
     <div style="width:1px;height:20px;background:#E8E8E8"></div>
     <span class="loop-bar-label">DCS</span>
     <select id="dcs-sel" onchange="recalc()" style="font-family:inherit;font-size:12px;border:1px solid #E0E0E0;border-radius:5px;padding:5px 10px;outline:none;background:#FAFAFA;cursor:pointer">
@@ -311,14 +311,14 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
     <span class="pv-chip chip-pv">PV: 온도 (°C)</span>
     <span class="pv-chip chip-mv">MV: 밸브 개도 (%)</span>
     <span class="pv-chip chip-region">구간: 08:30 ~ 09:20</span>
-    <div style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:11px;color:#aaa" id="r2-topbar">R² = 0.943</div>
+    <div style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:11px;color:#aaa" id="r2-topbar">R² = —</div>
   </div>
 
   <!-- Uncertainty banner -->
   <div class="uncertainty-bar ub-high" id="unc-bar">
     <span class="ub-icon">🟢</span>
     <div class="ub-text">
-      <strong>모델 신뢰도 높음</strong> — R² = 0.943, ΔMV = 12.0%, SNR = 14.2 dB. 식별된 FOPDT 모델이 공정 응답을 잘 설명합니다. 추천 PID 파라미터의 신뢰도는 높습니다.
+      데이터 업로드 및 구간 선택 후 자동 계산됩니다.
     </div>
     <span class="ub-badge" id="unc-badge">높음</span>
   </div>
@@ -343,7 +343,7 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
               <div class="fopdt-item highlight">
                 <div class="fopdt-name">Process Gain</div>
                 <div class="fopdt-symbol">Kp</div>
-                <div class="fopdt-val" id="kp-val">0.824</div>
+                <div class="fopdt-val" id="kp-val">—</div>
                 <div class="fopdt-unit">°C / %MV</div>
                 <div class="fopdt-ci" id="kp-ci">95% CI: [0.781, 0.867]</div>
                 <span class="conf-badge conf-high">HIGH</span>
@@ -351,7 +351,7 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
               <div class="fopdt-item highlight">
                 <div class="fopdt-name">Time Constant</div>
                 <div class="fopdt-symbol">τ</div>
-                <div class="fopdt-val" id="tau-val">3.21</div>
+                <div class="fopdt-val" id="tau-val">—</div>
                 <div class="fopdt-unit">min</div>
                 <div class="fopdt-ci" id="tau-ci">95% CI: [2.94, 3.48]</div>
                 <span class="conf-badge conf-high">HIGH</span>
@@ -359,7 +359,7 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
               <div class="fopdt-item highlight">
                 <div class="fopdt-name">Dead Time</div>
                 <div class="fopdt-symbol">θ</div>
-                <div class="fopdt-val" id="theta-val">1.05</div>
+                <div class="fopdt-val" id="theta-val">—</div>
                 <div class="fopdt-unit">min</div>
                 <div class="fopdt-ci" id="theta-ci">95% CI: [0.82, 1.28]</div>
                 <span class="conf-badge conf-mid">MID</span>
@@ -371,10 +371,10 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
               <div style="font-size:10px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">전달함수 (Transfer Function)</div>
               <div style="font-family:'JetBrains Mono',monospace;color:#fff;font-size:14px;line-height:2;text-align:center">
                 <span style="color:#94A3B8">G(s) = </span>
-                <span style="color:#60A5FA" id="tf-kp">0.824</span>
-                <span style="color:#94A3B8"> × e</span><sup style="color:#F59E0B">-<span id="tf-theta">1.05</span>s</sup>
+                <span style="color:#60A5FA" id="tf-kp">—</span>
+                <span style="color:#94A3B8"> × e</span><sup style="color:#F59E0B">-<span id="tf-theta">—</span>s</sup>
                 <span style="color:#94A3B8"> / ( </span>
-                <span style="color:#34D399" id="tf-tau">3.21</span>
+                <span style="color:#34D399" id="tf-tau">—</span>
                 <span style="color:#94A3B8">s + 1 )</span>
               </div>
             </div>
@@ -383,10 +383,10 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
             <div class="r2-bar-wrap">
               <span class="r2-label">모델 적합도</span>
               <div class="r2-track"><div class="r2-fill" id="r2-fill" style="width:94.3%"></div></div>
-              <span class="r2-val" id="r2-val">R² = 0.943</span>
+              <span class="r2-val" id="r2-val">R² = —</span>
             </div>
             <div style="display:flex;gap:16px;margin-top:8px">
-              <span style="font-size:11px;color:#888">RMSE: <span style="font-family:'JetBrains Mono',monospace;color:#555" id="rmse-val">0.38 °C</span></span>
+              <span style="font-size:11px;color:#888">RMSE: <span style="font-family:'JetBrains Mono',monospace;color:#555" id="rmse-val">— </span></span>
               <span style="font-size:11px;color:#888">τ/θ 비율: <span style="font-family:'JetBrains Mono',monospace;color:#555" id="ratio-val">3.06</span></span>
               <span style="font-size:11px;color:#888">식별 방법: <span style="font-family:'JetBrains Mono',monospace;color:#555">Least Squares Fit</span></span>
             </div>
@@ -455,8 +455,8 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
         <!-- Lambda slider (IMC) -->
         <div class="lambda-row" id="lambda-row">
           <span class="lambda-label">λ (Lambda)</span>
-          <input type="range" class="lambda-slider" id="lambda-slider" min="1" max="20" step="0.5" value="6.42" oninput="onLambda(this.value)">
-          <span class="lambda-val" id="lambda-val">6.42</span>
+          <input type="range" class="lambda-slider" id="lambda-slider" min="1" max="20" step="0.5" value="2.0" oninput="onLambda(this.value)">
+          <span class="lambda-val" id="lambda-val">2.0</span>
           <span style="width:1px;height:16px;background:#E8E8E8"></span>
           <span class="lambda-hint" id="lambda-hint">= 2× θ &nbsp; 권장: 2~5× Dead Time</span>
         </div>
@@ -475,9 +475,9 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
           </div>
           <div class="basis-body" id="basis-body">
             <div style="margin-bottom:12px;padding:10px 14px;background:#1C1C1E;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.8;color:#94A3B8">
-              <span style="color:#60A5FA">FOPDT 모델:</span> Kp=<span style="color:#34D399" id="b-kp">0.824</span>, τ=<span style="color:#34D399" id="b-tau">3.21</span> min, θ=<span style="color:#F59E0B" id="b-theta">1.05</span> min<br>
+              <span style="color:#60A5FA">FOPDT 모델:</span> Kp=<span style="color:#34D399" id="b-kp">—</span>, τ=<span style="color:#34D399" id="b-tau">—</span> min, θ=<span style="color:#F59E0B" id="b-theta">—</span> min<br>
               <span style="color:#60A5FA">Tuning Method:</span> <span style="color:#fff" id="b-method">IMC (Internal Model Control)</span><br>
-              <span style="color:#60A5FA">λ =</span> <span style="color:#FF6B2B" id="b-lambda">6.42</span> min &nbsp;[선택: 약 2× Dead Time]
+              <span style="color:#60A5FA">λ =</span> <span style="color:#FF6B2B" id="b-lambda">2.0</span> min &nbsp;[선택: 약 2× Dead Time]
             </div>
             <div id="basis-steps"></div>
           </div>
@@ -517,7 +517,7 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
 <!-- Action bar -->
 <div class="action-bar">
   <div class="action-bar-info">
-    <strong id="ab-info">TIC-101 · IMC Tuning · Honeywell Experion</strong>&nbsp; — PID 파라미터 계산 완료. 시뮬레이션으로 응답을 확인하세요.
+    <strong id="ab-info">— · — · —</strong><strong id="ab-info">TIC-101 · IMC Tuning · Honeywell Experion</strong>&nbsp; — PID 파라미터 계산 완료. 시뮬레이션으로 응답을 확인하세요.nbsp; — 데이터 업로드 후 PID 파라미터가 계산됩니다.
   </div>
   <div class="action-bar-right">
     <button class="btn btn-outline" onclick="showToast('← 트렌드 분석으로 이동')">← 이전</button>
@@ -531,8 +531,8 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
 // ══════════════════════════════════════════
 // MODEL PARAMETERS (simulated identification result)
 // ══════════════════════════════════════════
-let MODEL = { kp:0.824, tau:3.21, theta:1.05, r2:0.943, rmse:0.38 };
-let LAMBDA = 6.42;
+let MODEL = { kp:null, tau:null, theta:null, r2:null, rmse:null };
+let LAMBDA = 2.0;
 let METHOD = 'imc';
 let DCS = 'honeywell';
 
@@ -543,32 +543,32 @@ const DCS_DEFS = {
   honeywell: {
     name:'Honeywell Experion PKS',
     params:[
-      {key:'P', dcsName:'GAIN',  unit:'(무단위)',         prev:1.50},
-      {key:'I', dcsName:'RSET',  unit:'min/rep',          prev:3.20},
-      {key:'D', dcsName:'RATE',  unit:'min',               prev:0.00},
+      {key:'P', dcsName:'GAIN',  unit:'(무단위)',         prev:0},
+      {key:'I', dcsName:'RSET',  unit:'min/rep',          prev:0},
+      {key:'D', dcsName:'RATE',  unit:'min',               prev:0},
     ]
   },
   yokogawa: {
     name:'Yokogawa CENTUM VP',
     params:[
-      {key:'P', dcsName:'P (%)', unit:'%  (Kp=100/P)',    prev:55.0},
-      {key:'I', dcsName:'Ti',    unit:'min',               prev:3.50},
-      {key:'D', dcsName:'Td',    unit:'min',               prev:0.00},
+      {key:'P', dcsName:'P (%)', unit:'%  (Kp=100/P)',    prev:0},
+      {key:'I', dcsName:'Ti',    unit:'min',               prev:0},
+      {key:'D', dcsName:'Td',    unit:'min',               prev:0},
     ]
   },
   deltav: {
     name:'Emerson DeltaV',
     params:[
-      {key:'P', dcsName:'GAIN',  unit:'(무단위)',          prev:1.50},
-      {key:'I', dcsName:'RESET', unit:'sec/repeat',        prev:192},
+      {key:'P', dcsName:'GAIN',  unit:'(무단위)',          prev:0},
+      {key:'I', dcsName:'RESET', unit:'sec/repeat',        prev:0},
       {key:'D', dcsName:'RATE',  unit:'sec',               prev:0},
     ]
   },
   abb: {
     name:'ABB 800xA',
     params:[
-      {key:'P', dcsName:'KP',    unit:'(무단위)',          prev:1.50},
-      {key:'I', dcsName:'TI',    unit:'sec',               prev:210},
+      {key:'P', dcsName:'KP',    unit:'(무단위)',          prev:0},
+      {key:'I', dcsName:'TI',    unit:'sec',               prev:0},
       {key:'D', dcsName:'TD',    unit:'sec',               prev:0},
     ]
   },
@@ -822,16 +822,14 @@ function exportReport(){showToast('📄 보고서 생성 중... (PDF 출력 예�
 
 // ── Init ──────────────────────────────────
 window.addEventListener('load',()=>{
-  buildFitChart();
-  renderDCSParams();
+  if(MODEL.kp === null){
+    showEmptyState();
+  } else {
+    buildFitChart();
+    renderDCSParams();
+  }
 });
 
-let _tt;
-function showToast(msg){
-  const el=document.getElementById('toast-el');
-  el.textContent=msg;el.classList.add('show');
-  clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),2800);
-}
-</script>
-</body>
-</html>
+function showEmptyState(){
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;top:48px;left:168px;right:0;bottom:0;background:rgba(245,246,248,0.97);display

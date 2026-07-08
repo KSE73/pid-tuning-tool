@@ -291,17 +291,17 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
   <!-- Loop bar -->
   <div class="loop-bar">
     <span class="lbl">Loop</span>
-    <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600">TIC-101</span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600" id="s5-loopname">—</span>
     <div style="width:1px;height:20px;background:#E8E8E8"></div>
     <span class="lbl">DCS</span>
     <span style="font-size:12px;color:#555">Honeywell Experion PKS</span>
     <div style="width:1px;height:20px;background:#E8E8E8"></div>
     <span class="lbl">분석 기간</span>
-    <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#555">08:00 ~ 11:00 (180 min)</span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#555">— (데이터 없음)</span>
     <div style="width:1px;height:20px;background:#E8E8E8"></div>
-    <span class="pv-chip chip-orange">Tuning 완료 · IMC λ=6.42</span>
+    <span class="pv-chip chip-orange">데이터 업로드 후 분석 가능</span>
     <div style="margin-left:auto">
-      <span style="font-size:11px;color:#aaa">진단 시각: 2024-03-15 11:32</span>
+      <span style="font-size:11px;color:#aaa">진단 시각: —</span>
     </div>
   </div>
 
@@ -309,23 +309,23 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
   <div class="summary-grid animate-in">
     <div class="sum-card orange">
       <div class="sum-label">AUTO 모드 비율</div>
-      <div class="sum-val">82<span style="font-size:14px">%</span></div>
-      <div class="sum-sub">권장 ≥ 80% · 충족</div>
+      <div class="sum-val">—</div>
+      <div class="sum-sub">데이터 업로드 후 분석</div>
     </div>
     <div class="sum-card red">
       <div class="sum-label">최대 Overshoot</div>
-      <div class="sum-val">18<span style="font-size:14px">%</span></div>
-      <div class="sum-sub">기준 ≤ 20% · 경계</div>
+      <div class="sum-val">—</div>
+      <div class="sum-sub">데이터 업로드 후 분석</div>
     </div>
     <div class="sum-card green">
       <div class="sum-label">Valve 포화 빈도</div>
-      <div class="sum-val">1.2<span style="font-size:14px">%</span></div>
-      <div class="sum-sub">기준 ≤ 5% · 양호</div>
+      <div class="sum-val">—</div>
+      <div class="sum-sub">데이터 업로드 후 분석</div>
     </div>
     <div class="sum-card blue">
       <div class="sum-label">진단 항목 통과</div>
-      <div class="sum-val">5<span style="font-size:14px">/7</span></div>
-      <div class="sum-sub">2개 항목 주의 필요</div>
+      <div class="sum-val">—</div>
+      <div class="sum-sub">데이터 업로드 후 분석</div>
     </div>
   </div>
 
@@ -334,18 +334,17 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
 
     <!-- Grade card -->
     <div class="grade-card grade-C" id="grade-card">
-      <div class="grade-bg" id="grade-bg">C</div>
-      <div class="grade-circle" id="grade-circle">C</div>
-      <div class="grade-label" id="grade-label">Tune Required</div>
-      <div class="grade-sub" id="grade-sub">Tuning 파라미터 개선이 필요합니다.<br>추천 PID 파라미터 적용 후 재진단을 권장합니다.</div>
+      <div class="grade-bg" id="grade-bg">—</div>
+      <div class="grade-circle" id="grade-circle" style="font-size:32px;color:#ccc;border-color:#e5e7eb;background:#f9fafb">—</div>
+      <div class="grade-label" id="grade-label" style="color:#aaa">진단 대기 중</div>
+      <div class="grade-sub" id="grade-sub">데이터 업로드 후<br>종합 등급이 자동 산출됩니다.</div>
       <div class="grade-score-row">
         <span style="font-size:11px;color:#888;min-width:48px">종합 점수</span>
-        <div class="grade-score-track"><div class="grade-score-fill" id="grade-fill" style="width:62%"></div></div>
-        <span class="grade-score-val" id="grade-score">62</span>
+        <div class="grade-score-track"><div class="grade-score-fill" id="grade-fill" style="width:0%;background:#e5e7eb"></div></div>
+        <span class="grade-score-val" id="grade-score" style="color:#ccc">—</span>
       </div>
       <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
-        <span style="font-size:10px;font-weight:600;padding:2px 8px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;color:#D97706">🟡 Oscillation 의심</span>
-        <span style="font-size:10px;font-weight:600;padding:2px 8px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;color:#D97706">🟡 Overshoot 경계</span>
+        <span style="font-size:10px;font-weight:600;padding:2px 8px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:10px;color:#9ca3af">분석 전</span>
       </div>
     </div>
 
@@ -389,8 +388,8 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
   <div class="complete-banner animate-in">
     <div class="complete-icon">🎯</div>
     <div class="complete-text">
-      <div class="complete-title">TIC-101 Tuning 분석 완료</div>
-      <div class="complete-sub">FOPDT 모델 식별 (R²=0.943) · IMC Tuning (λ=6.42 min) · Loop 진단 등급 C → B 개선 예측<br>추천 파라미터: GAIN=1.823 · RSET=3.735 min/rep · RATE=0.447 min</div>
+      <div class="complete-title">— 진단 대기 중</div>
+      <div class="complete-sub">데이터 업로드 후 분석 결과가 여기에 표시됩니다.</div>
     </div>
     <div class="complete-actions">
       <button class="btn btn-outline btn-sm" onclick="exportPDF()">📄 보고서 저장</button>
@@ -423,104 +422,98 @@ const DIAG_ITEMS = [
     id:'mode',
     title:'운전 모드 비율 (AUTO Rate)',
     method:'전체 시간 대비 AUTO 모드 체류 시간 분석',
-    status:'ok',
-    score:82,
+    status:'info',
+    score:0,
     max:100,
     threshold:'권장 ≥ 80%',
-    measured:'AUTO 82% / MANUAL 18%',
-    detail:'분석 구간 180분 중 AUTO 모드 체류 시간은 148분(82%)입니다. 초기 8분간 MANUAL 운전 후 AUTO 전환이 확인됩니다. 80% 기준을 충족하나 MANUAL 전환 빈도를 모니터링하세요.',
-    actionType:'ok',
-    action:'현재 AUTO 모드 비율은 양호합니다. MANUAL 전환 원인을 기록·추적하여 개선 추세를 관리하세요.'
+    measured:'—',
+    detail:'데이터 업로드 후 자동 분석됩니다.',
+    actionType:'info',
+    action:'Screen 1에서 데이터를 업로드하면 자동으로 분석됩니다.'
   },
   {
     id:'oscillation',
     title:'진동 감지 (Oscillation)',
     method:'PV 자기상관함수(ACF) 분석 · Zero-crossing 주기 검출',
-    status:'warn',
-    score:55,
+    status:'info',
+    score:0,
     max:100,
     threshold:'ACF 0-crossing < 2×Dead Time → 진동 의심',
-    measured:'ACF 0-crossing 주기: 2.1 min (Dead Time: 1.05 min)',
-    detail:'PV의 ACF 분석 결과 진동 성분이 약하게 감지됩니다. 현재 Gain이 다소 높아 주기적 편차가 발생할 수 있습니다. Ziegler-Nichols 방법 적용 시 진동이 증가할 수 있으므로 IMC 방법을 유지하고 λ를 소폭 증가시키면 개선됩니다.',
-    actionType:'warn',
-    action:'⚠ IMC λ 값을 현재 6.42min에서 7~8min으로 증가시켜 진동 억제를 권장합니다. 추천 PID 파라미터 적용 후 재진단하세요.'
+    measured:'—',
+    detail:'데이터 업로드 후 자동 분석됩니다.',
+    actionType:'info',
+    action:'Screen 1에서 데이터를 업로드하면 자동으로 분석됩니다.'
   },
   {
     id:'stiction',
     title:'밸브 Stiction 감지',
     method:'PV-MV 리사쥬 곡선 분석 · MV 불감대(Deadband) 검출',
-    status:'ok',
-    score:88,
+    status:'info',
+    score:0,
     max:100,
     threshold:'타원형 리사쥬 루프 감지 시 Stiction 의심',
-    measured:'리사쥬 원형 지수: 0.12 (기준 < 0.3)',
-    detail:'PV-MV 리사쥬 곡선이 타원 형태를 보이지 않으며, MV 불감대도 검출되지 않았습니다. 제어 밸브의 정적 마찰(Stiction) 문제는 현재 없는 것으로 판단됩니다.',
-    actionType:'ok',
-    action:'밸브 Stiction 문제 없음. 정기 밸브 점검 일정(6개월 주기)을 유지하세요.'
+    measured:'—',
+    detail:'데이터 업로드 후 자동 분석됩니다.',
+    actionType:'info',
+    action:'Screen 1에서 데이터를 업로드하면 자동으로 분석됩니다.'
   },
   {
     id:'overshoot',
     title:'Overshoot 비율',
     method:'SV 변경 이벤트 후 최대 PV 편차 분석',
-    status:'warn',
-    score:60,
+    status:'info',
+    score:0,
     max:100,
     threshold:'기준 ≤ 20%',
-    measured:'최대 Overshoot: 18.3% (SV +10°C 스텝)',
-    detail:'SV +10°C 변경 시 최대 PV가 SV를 18.3% 초과합니다. 20% 기준에 근접하여 주의가 필요합니다. 비례이득(GAIN)이 다소 높거나 미분(RATE)이 부족한 것이 원인으로 추정됩니다. 추천 PID 적용 시 Overshoot 8% 이하로 개선 예측.',
-    actionType:'warn',
-    action:'⚠ 추천 PID 파라미터(GAIN=1.823, RATE=0.447) 적용 시 Overshoot이 약 8%로 개선될 것으로 시뮬레이션 결과 확인됨. 우선 적용 검토 권장.'
+    measured:'—',
+    detail:'데이터 업로드 후 자동 분석됩니다.',
+    actionType:'info',
+    action:'Screen 1에서 데이터를 업로드하면 자동으로 분석됩니다.'
   },
   {
     id:'iae',
     title:'SV 추종성 (IAE)',
     method:'|PV-SV| 누적 절대 오차 정규화',
-    status:'ok',
-    score:72,
+    status:'info',
+    score:0,
     max:100,
     threshold:'상위 20% 초과 → 개선 필요',
-    measured:'정규화 IAE: 0.68 (상위 32% 수준)',
-    detail:'현재 Tuning의 IAE는 동종 루프 대비 상위 32% 수준입니다. 추천 PID 적용 시 IAE 약 35% 개선이 예측됩니다. SV 추종 성능은 보통 수준이나 개선 여지가 있습니다.',
-    actionType:'ok',
-    action:'추천 PID 파라미터 적용 후 IAE 개선 효과를 재측정하세요.'
+    measured:'—',
+    detail:'데이터 업로드 후 자동 분석됩니다.',
+    actionType:'info',
+    action:'Screen 1에서 데이터를 업로드하면 자동으로 분석됩니다.'
   },
   {
     id:'saturation',
     title:'Valve 포화 빈도',
     method:'MV = 0% 또는 100% 체류 시간 비율',
-    status:'ok',
-    score:95,
+    status:'info',
+    score:0,
     max:100,
     threshold:'기준 ≤ 5%',
-    measured:'포화 비율: 1.2% (2.2 min / 180 min)',
-    detail:'밸브 포화(Saturation) 발생이 매우 낮은 수준(1.2%)입니다. 운전 범위 내 제어 여유가 충분합니다.',
-    actionType:'ok',
-    action:'밸브 포화 문제 없음. 현재 운전 범위를 유지하세요.'
+    measured:'—',
+    detail:'데이터 업로드 후 자동 분석됩니다.',
+    actionType:'info',
+    action:'Screen 1에서 데이터를 업로드하면 자동으로 분석됩니다.'
   },
   {
     id:'nonlinearity',
     title:'공정 이득 비선형성',
     method:'저부하/고부하 구간별 FOPDT Gain 비교 분석',
-    status:'ok',
-    score:78,
+    status:'info',
+    score:0,
     max:100,
     threshold:'Gain 변화 > 50% → Gain Scheduling 권장',
-    measured:'저부하 Kp=0.79 / 고부하 Kp=0.87 (변화율 10.1%)',
-    detail:'운전 범위 내 공정 이득 변화가 10.1%로 선형성이 양호합니다. 단일 PID로 전 운전 범위를 커버할 수 있습니다. Gain Scheduling은 불필요합니다.',
-    actionType:'ok',
-    action:'공정 비선형성 문제 없음. 단일 PID 파라미터로 운전 범위 커버 가능.'
+    measured:'—',
+    detail:'데이터 업로드 후 자동 분석됩니다.',
+    actionType:'info',
+    action:'Screen 1에서 데이터를 업로드하면 자동으로 분석됩니다.'
   },
 ];
 
 const ACTIONS = [
-  {priority:'high', cls:'priority-high', priCls:'pri-high', icon:'🔴',
-   text:'<strong>[즉시 권장]</strong> 추천 PID 파라미터 (GAIN=1.823, RSET=3.735, RATE=0.447) 적용 — 현재 Overshoot 18.3%를 약 8%로 개선하고 진동 성분을 억제합니다.'},
-  {priority:'mid', cls:'priority-mid', priCls:'pri-mid', icon:'🟡',
-   text:'<strong>[단기 조치]</strong> 파라미터 적용 후 1주일 내 재진단 실시 — 실제 공정 응답이 시뮬레이션과 일치하는지 확인하고 필요 시 λ를 미세 조정하세요.'},
-  {priority:'low', cls:'priority-low', priCls:'pri-low', icon:'🟢',
-   text:'<strong>[정기 점검]</strong> 제어 밸브 6개월 주기 점검 유지 — 현재 Stiction 없음이나 마모 누적에 대비한 예방 정비를 권장합니다.'},
   {priority:'info', cls:'priority-info', priCls:'pri-info', icon:'🔵',
-   text:'<strong>[모니터링]</strong> AUTO 모드 전환 이력 기록 관리 — MANUAL 전환 사유를 DCS 이벤트 로그에 남기고 월간 통계를 추적하세요.'},
+   text:'<strong>[데이터 없음]</strong> Screen 1에서 CSV/Excel 파일을 업로드하고 Screen 2~4를 순서대로 진행하면 우선순위별 조치 목록이 자동 생성됩니다.'},
 ];
 
 // ══════════════════════════════════════════
@@ -529,8 +522,8 @@ const ACTIONS = [
 function buildRadar() {
   const labels = DIAG_ITEMS.map(d=>d.title.split(' ')[0]);
   const currentScores = DIAG_ITEMS.map(d=>d.score);
-  // Predicted after recommended PID
-  const predictedScores = [82, 78, 88, 88, 85, 95, 78];
+  // Predicted after recommended PID (데이터 없으면 0)
+  const predictedScores = currentScores.map(() => 0);
 
   const ctx = document.getElementById('radar-chart').getContext('2d');
   new Chart(ctx, {
@@ -645,11 +638,11 @@ function renderActions() {
 // ══════════════════════════════════════════
 function animateGrade() {
   const fill = document.getElementById('grade-fill');
-  setTimeout(() => { fill.style.width = '62%'; }, 300);
+  setTimeout(() => { fill.style.width = '0%'; }, 300);
 }
 
 function exportPDF() {
-  showToast('📄 진단 보고서 PDF 생성 중... (TIC-101_Loop_Diagnosis_Report.pdf)');
+  showToast('📄 진단 보고서: 데이터 업로드 후 생성 가능합니다.');
 }
 
 // ── Init ──────────────────────────────────
@@ -669,3 +662,4 @@ function showToast(msg) {
 </script>
 </body>
 </html>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     

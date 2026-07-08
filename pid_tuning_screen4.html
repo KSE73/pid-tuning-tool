@@ -247,7 +247,7 @@ input[type=range].slider{width:100%;accent-color:#FF6B2B;height:4px;cursor:point
     <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#555">Kp=0.824 · τ=3.21 · θ=1.05</span>
     <div style="width:1px;height:20px;background:#E8E8E8"></div>
     <span class="lbl">추천 (IMC · Honeywell)</span>
-    <span class="pv-chip chip-pid-new" id="rec-chip">GAIN=1.823 · RSET=3.74 · RATE=0.45</span>
+    <span class="pv-chip chip-pid-new" id="rec-chip">— · — · —</span>
     <div style="width:1px;height:20px;background:#E8E8E8"></div>
     <span class="lbl">현재</span>
     <span class="pv-chip chip-pid-cur" id="cur-chip">GAIN=1.50 · RSET=3.20 · RATE=0.00</span>
@@ -371,11 +371,11 @@ input[type=range].slider{width:100%;accent-color:#FF6B2B;height:4px;cursor:point
               <div class="slider-top">
                 <span class="slider-name">GAIN</span>
                 <div class="slider-vals">
-                  <span class="slider-val-new" id="sl-p-val">1.823</span>
-                  <span class="slider-val-rec" id="sl-p-rec">(추천: 1.823)</span>
+                  <span class="slider-val-new" id="sl-p-val">—</span>
+                  <span class="slider-val-rec" id="sl-p-rec">(추천: —)</span>
                 </div>
               </div>
-              <input type="range" class="slider" id="sl-p" min="0.1" max="5" step="0.001" value="1.823" oninput="onSlider('p',this.value)">
+              <input type="range" class="slider" id="sl-p" min="0.1" max="5" step="0.001" value="1.0" oninput="onSlider('p',this.value)">
               <div class="slider-limits"><span>0.1</span><span>5.0</span></div>
             </div>
           </div>
@@ -389,11 +389,11 @@ input[type=range].slider{width:100%;accent-color:#FF6B2B;height:4px;cursor:point
               <div class="slider-top">
                 <span class="slider-name">RSET</span>
                 <div class="slider-vals">
-                  <span class="slider-val-new" id="sl-i-val">3.735</span>
-                  <span class="slider-val-rec" id="sl-i-rec">(추천: 3.735)</span>
+                  <span class="slider-val-new" id="sl-i-val">—</span>
+                  <span class="slider-val-rec" id="sl-i-rec">(추천: —)</span>
                 </div>
               </div>
-              <input type="range" class="slider" id="sl-i" min="0.1" max="20" step="0.01" value="3.735" oninput="onSlider('i',this.value)">
+              <input type="range" class="slider" id="sl-i" min="0.1" max="20" step="0.01" value="1.0" oninput="onSlider('i',this.value)">
               <div class="slider-limits"><span>0.1</span><span>20</span></div>
             </div>
           </div>
@@ -407,11 +407,11 @@ input[type=range].slider{width:100%;accent-color:#FF6B2B;height:4px;cursor:point
               <div class="slider-top">
                 <span class="slider-name">RATE</span>
                 <div class="slider-vals">
-                  <span class="slider-val-new" id="sl-d-val">0.447</span>
-                  <span class="slider-val-rec" id="sl-d-rec">(추천: 0.447)</span>
+                  <span class="slider-val-new" id="sl-d-val">—</span>
+                  <span class="slider-val-rec" id="sl-d-rec">(추천: —)</span>
                 </div>
               </div>
-              <input type="range" class="slider" id="sl-d" min="0" max="5" step="0.001" value="0.447" oninput="onSlider('d',this.value)">
+              <input type="range" class="slider" id="sl-d" min="0" max="5" step="0.001" value="0.0" oninput="onSlider('d',this.value)">
               <div class="slider-limits"><span>0</span><span>5</span></div>
             </div>
           </div>
@@ -450,12 +450,13 @@ input[type=range].slider{width:100%;accent-color:#FF6B2B;height:4px;cursor:point
 // ══════════════════════════════════════════
 // PROCESS & PID PARAMETERS
 // ══════════════════════════════════════════
-const PROC = { kp:0.824, tau:3.21, theta:1.05 };
+const PROC = { kp:null, tau:null, theta:null };  // Screen 3에서 전달
 
-const REC  = { p:1.823, i:3.735, d:0.447 };   // recommended (Honeywell units)
-const CUR  = { p:1.500, i:3.200, d:0.000 };   // current DCS
+const REC  = { p:null, i:null, d:null };   // 추천 PID (미입력)
+const CUR  = { p:0, i:0, d:0 };           // 현재 DCS 파라미터
 
-let TUNED  = { p:1.823, i:3.735, d:0.447 };   // user-adjusted (starts = REC)
+let TUNED  = { p:1.0, i:1.0, d:0.0 };    // 슬라이더 초기값
+let HAS_DATA = false;                      // 데이터 존재 여부
 let SCENARIO = 'sp';
 
 // ══════════════════════════════════════════
@@ -701,16 +702,14 @@ function exportChart() { showToast('📷 차트 이미지 저장 (구현 예정)
 
 // ── Init ──────────────────────────────────
 window.addEventListener('load',()=>{
-  initCharts();
-  redraw();
+  if(PROC.kp === null){
+    showEmptyState();
+  } else {
+    HAS_DATA = true;
+    initCharts();
+    redraw();
+  }
 });
 
-let _tt;
-function showToast(msg){
-  const el=document.getElementById('toast-el');
-  el.textContent=msg;el.classList.add('show');
-  clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),2800);
-}
-</script>
-</body>
-</html>
+function showEmptyState(){
+  const overlay = document.createEle

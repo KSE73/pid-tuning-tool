@@ -433,33 +433,11 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
 
 <script>
 // ══════════════════════════════════════════
-// DATA GENERATION
+// DATA — Screen 1에서 업로드된 데이터를 사용
 // ══════════════════════════════════════════
-function generateData() {
-  const rows=[], start=new Date('2024-03-15T08:00:00');
-  let pv=120,sp=120,mv=50,integral=0,prevErr=0;
-  for(let i=0;i<180;i++){
-    const t=new Date(start.getTime()+i*60000);
-    if(i===30){sp=130;mv=62;}
-    if(i===100){sp=125;mv=55;}
-    const noise=(Math.random()-.5)*.35;
-    const err=sp-pv;
-    integral+=err/60;
-    const der=(err-prevErr)*60; prevErr=err;
-    mv=Math.min(100,Math.max(0,mv+0.02*err));
-    pv=pv+1/3*(0.78*(mv-50)*0.6-(pv-120))+noise;
-    rows.push({
-      t:t.toTimeString().slice(0,8),
-      pv:+pv.toFixed(2), mv:+mv.toFixed(1), sv:sp,
-      mode:i<8?'MANUAL':'AUTO', idx:i
-    });
-  }
-  return rows;
-}
-
-const DATA = generateData();
-const LABELS = DATA.map(d=>d.t);
-let viewStart=0, viewEnd=DATA.length-1;
+const DATA = [];   // 실제 데이터 없음 — Screen 1에서 파일 업로드 후 진행
+const LABELS = [];
+let viewStart=0, viewEnd=0;
 let selStart=-1, selEnd=-1;
 let interactMode='select';
 let isDragging=false, dragStartX=0, dragStartSel=0;
@@ -481,32 +459,28 @@ const chartDefaults = {
   elements:{point:{radius:0,hoverRadius:3},line:{tension:.3,borderWidth:1.5}}
 };
 
-// PV Chart
+// ── 빈 차트 초기화 (데이터 없음) ──────────────────
 const pvCtx = document.getElementById('pv-chart').getContext('2d');
 document.getElementById('pv-chart').height = 140;
 const pvChart = new Chart(pvCtx,{
   type:'line',
-  data:{
-    labels:LABELS,
-    datasets:[
-      {label:'PV',data:DATA.map(d=>d.pv),borderColor:'#2563EB',backgroundColor:'rgba(37,99,235,.06)',fill:true,order:1},
-      {label:'SV',data:DATA.map(d=>d.sv),borderColor:'#DC2626',borderDash:[4,3],backgroundColor:'transparent',fill:false,order:0},
-    ]
-  },
+  data:{labels:[],datasets:[
+    {label:'PV',data:[],borderColor:'#2563EB',backgroundColor:'rgba(37,99,235,.06)',fill:true,order:1},
+    {label:'SV',data:[],borderColor:'#DC2626',borderDash:[4,3],backgroundColor:'transparent',fill:false,order:0},
+  ]},
   options:{...chartDefaults,
     scales:{...chartDefaults.scales,
       x:{...chartDefaults.scales.x,display:false},
-      y:{...chartDefaults.scales.y,title:{display:true,text:'°C',font:{size:9},color:'#aaa'}}
+      y:{...chartDefaults.scales.y,title:{display:true,text:'EU',font:{size:9},color:'#aaa'}}
     }
   }
 });
 
-// MV Chart
 const mvCtx = document.getElementById('mv-chart').getContext('2d');
 document.getElementById('mv-chart').height = 100;
 const mvChart = new Chart(mvCtx,{
   type:'line',
-  data:{labels:LABELS,datasets:[{label:'MV',data:DATA.map(d=>d.mv),borderColor:'#059669',backgroundColor:'rgba(5,150,105,.06)',fill:true,stepped:false}]},
+  data:{labels:[],datasets:[{label:'MV',data:[],borderColor:'#059669',backgroundColor:'rgba(5,150,105,.06)',fill:true}]},
   options:{...chartDefaults,
     scales:{...chartDefaults.scales,
       x:{...chartDefaults.scales.x,display:false},
@@ -515,35 +489,23 @@ const mvChart = new Chart(mvCtx,{
   }
 });
 
-// MODE Chart
 const modeCtx = document.getElementById('mode-chart').getContext('2d');
 document.getElementById('mode-chart').height = 48;
-const modeColors = DATA.map(d=>d.mode==='AUTO'?'rgba(16,185,129,.7)':'rgba(245,158,11,.7)');
 const modeChart = new Chart(modeCtx,{
   type:'bar',
-  data:{
-    labels:LABELS,
-    datasets:[{label:'MODE',data:DATA.map(d=>d.mode==='AUTO'?1:0.5),
-      backgroundColor:modeColors,borderWidth:0,barPercentage:1.0,categoryPercentage:1.0}]
-  },
+  data:{labels:[],datasets:[{label:'MODE',data:[],backgroundColor:[],borderWidth:0,barPercentage:1.0,categoryPercentage:1.0}]},
   options:{...chartDefaults,
-    scales:{
-      x:{display:false,grid:{display:false}},
-      y:{display:false,min:0,max:1,grid:{display:false}}
-    },
-    plugins:{...chartDefaults.plugins,
-      tooltip:{enabled:false},
-    }
+    scales:{x:{display:false,grid:{display:false}},y:{display:false,min:0,max:1,grid:{display:false}}},
+    plugins:{...chartDefaults.plugins,tooltip:{enabled:false}}
   }
 });
 
-// NAV Chart
 const navCtx = document.getElementById('nav-chart').getContext('2d');
 const navChart = new Chart(navCtx,{
   type:'line',
-  data:{labels:LABELS,datasets:[
-    {label:'PV',data:DATA.map(d=>d.pv),borderColor:'rgba(37,99,235,.5)',borderWidth:1,backgroundColor:'rgba(37,99,235,.05)',fill:true},
-    {label:'MV',data:DATA.map(d=>d.mv),borderColor:'rgba(5,150,105,.4)',borderWidth:1,backgroundColor:'transparent',fill:false}
+  data:{labels:[],datasets:[
+    {label:'PV',data:[],borderColor:'rgba(37,99,235,.5)',borderWidth:1,backgroundColor:'rgba(37,99,235,.05)',fill:true},
+    {label:'MV',data:[],borderColor:'rgba(5,150,105,.4)',borderWidth:1,backgroundColor:'transparent',fill:false}
   ]},
   options:{animation:false,responsive:true,maintainAspectRatio:false,
     plugins:{legend:{display:false},tooltip:{enabled:false}},
@@ -897,21 +859,22 @@ function goNext(){showToast('→ Screen 3 모델 식별로 이동 (구현 예정
 // INIT
 // ══════════════════════════════════════════
 window.addEventListener('load',()=>{
-  updateChartView();
-  setTimeout(autoDetectRegions, 400);
+  if(DATA.length === 0){
+    showEmptyState();
+  } else {
+    viewEnd = DATA.length - 1;
+    updateChartView();
+    setTimeout(autoDetectRegions, 400);
+  }
 });
 
-window.addEventListener('resize',()=>{
-  updateSelectionOverlay();
-  updateNavBrush();
-});
-
-let _tt;
-function showToast(msg){
-  const el=document.getElementById('toast-el');
-  el.textContent=msg;el.classList.add('show');
-  clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),2800);
-}
-</script>
-</body>
-</html>
+function showEmptyState(){
+  // 차트 영역 위에 빈 상태 오버레이 삽입
+  const chartArea = document.querySelector('.chart-panel') || document.querySelector('.main-content') || document.querySelector('main');
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;top:48px;left:168px;right:0;bottom:0;background:rgba(245,246,248,0.97);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:50;gap:16px';
+  overlay.innerHTML = `
+    <div style="width:64px;height:64px;background:#FFF0E8;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px">📂</div>
+    <div style="font-size:16px;font-weight:700;color:#1A1A1A">업로드된 데이터가 없습니다</div>
+    <div style="font-size:13px;color:#888;text-align:center;line-height:1.7">Screen 1에서 CSV 또는 Excel 파일을 업로드한 후<br>이 화면으로 이동해 주세요.</div>
+    <a href="pid_tuning_screen1.html" style="margin-top:8px;background:#FF6B2B;color:white;font-size:13px;fo
