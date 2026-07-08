@@ -812,46 +812,47 @@ function processFile(f) {
       try {
         const wb = XLSX.read(e.target.result, {type:'array', cellDates:true});
         const ws = wb.Sheets[wb.SheetNames[0]];
-        const ref = XLSX.utils.decode_range(ws['!ref'] || 'A1');
 
-        // 헤더 행 자동 탐색: '날짜/시간/date/time' 키워드 셀이 있는 행 우선,
-        // 없으면 숫자/날짜 데이터 직전의 마지막 문자열 행 사용
+        // raw 배열로 읽기 (range 파라미터 없이 - 버전 호환성 최대)
+        const raw = XLSX.utils.sheet_to_json(ws, {header:1, defval:null});
+
+        // 날짜/시간 키워드가 포함된 셀이 있는 행을 헤더로 탐색
         const DATE_KW = ['날짜','시간','date','time','timestamp','datetime'];
-        let headerRow = ref.s.r, lastStrRow = ref.s.r, found = false;
-        for (let r = ref.s.r; r <= Math.min(ref.s.r + 25, ref.e.r) && !found; r++) {
-          let strCnt=0, numCnt=0, dateCnt=0, totalCnt=0;
-          for (let c = ref.s.c; c <= ref.e.c; c++) {
-            const cell = ws[XLSX.utils.encode_cell({r, c})];
-            if (!cell || cell.v == null) continue;
-            totalCnt++;
-            if (cell.t === 's') {
-              strCnt++;
-              if (DATE_KW.some(k => cell.v.toLowerCase().includes(k))) {
-                headerRow = r; found = true; break;
-              }
-            } else if (cell.t === 'd') dateCnt++;
-            else if (cell.t === 'n') numCnt++;
-          }
-          if (found) break;
-          if (totalCnt === 0) continue;
-          if (strCnt / totalCnt >= 0.5) lastStrRow = r;
-          else if ((numCnt + dateCnt) / totalCnt >= 0.5 && r > ref.s.r) {
-            headerRow = lastStrRow; break;
+        let hdrIdx = 0;
+        for (let i = 0; i < Math.min(30, raw.length); i++) {
+          const row = raw[i];
+          if (!row) continue;
+          const hasKW = row.some(v =>
+            v && typeof v === 'string' && DATE_KW.some(k => v.toLowerCase().includes(k))
+          );
+          if (hasKW) { hdrIdx = i; break; }
+        }
+
+        // 헤더 구성: null이거나 Date 타입인 셀은 __colN 으로 대체
+        const rawHeaders = raw[hdrIdx] || [];
+        const headers = rawHeaders.map((h, i) => {
+          if (h == null || h === '' || h instanceof Date || typeof h === 'number')
+            return '__col' + i;
+          return String(h).trim();
+        });
+
+        // 헤더 다음 행부터 데이터 변환 (숫자/Date 값이 하나라도 있는 행만)
+        const data = [];
+        for (let i = hdrIdx + 1; i < raw.length; i++) {
+          const row = raw[i];
+          if (!row) continue;
+          const obj = {};
+          headers.forEach((h, ci) => { obj[h] = (row[ci] !== undefined ? row[ci] : null); });
+          const vals = Object.values(obj).filter(v => v != null);
+          if (vals.some(v => typeof v === 'number' || v instanceof Date)) {
+            data.push(obj);
           }
         }
 
-        // 헤더 행 기준 파싱 (한 번만)
-        const allRows = XLSX.utils.sheet_to_json(ws, {defval: null, range: headerRow});
-
-        // 숫자/날짜 값이 하나라도 있는 행만 남김 (빈 행·설명 행 제거)
-        const clean = allRows.filter(row => {
-          const vals = Object.values(row).filter(v => v != null && v !== '');
-          return vals.length > 0 && vals.some(v => typeof v === 'number' || v instanceof Date);
-        });
-
-        loaded(clean, clean.length ? Object.keys(clean[0]) : [], f);
+        loaded(data, data.length ? Object.keys(data[0]) : [], f);
       } catch(err) {
         toast('❌ 파일 파싱 오류: ' + err.message);
+        console.error('XLSX parse error:', err);
       }
     };
     rd.readAsArrayBuffer(f);
