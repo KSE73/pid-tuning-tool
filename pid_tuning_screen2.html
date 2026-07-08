@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PID Tuning Tool — 트렌드 분석</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;background:#F5F6F8;color:#1A1A1A;font-size:13px}
+
+/* ── TOPBAR ── */
+.g-topbar{position:fixed;top:0;left:0;right:0;z-index:200;height:48px;background:#1C1C1E;display:flex;align-items:center;padding:0 16px;gap:0}
+.g-logo{display:flex;align-items:center;gap:8px;padding-right:20px;border-right:1px solid #333;margin-right:4px;text-decoration:none}
+.g-logo-icon{width:28px;height:28px;background:#FF6B2B;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:800}
+.g-logo-name{color:#fff;font-size:14px;font-weight:700;letter-spacing:-.3px}
+.g-nav{display:flex;align-items:center;flex:1}
+.g-nav-item{height:48px;display:flex;align-items:center;padding:0 14px;color:#999;font-size:13px;font-weight:500;cursor:pointer;text-decoration:none;transition:color .15s;position:relative;white-space:nowrap}
+.g-nav-item:hover{color:#ddd}
+.g-nav-item.pill{background:#FF6B2B;color:#fff;border-radius:20px;height:28px;padding:0 14px;margin:0 2px}
+.g-topbar-right{display:flex;align-items:center;gap:12px;margin-left:auto}
+.g-icon-btn{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:16px;cursor:pointer;position:relative;background:none;border:none}
+.g-icon-btn:hover{background:#333;color:#fff}
+.g-avatar{width:30px;height:30px;background:#444;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#ccc;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid #555}
+
+/* ── LAYOUT ── */
+.layout{display:flex;padding-top:48px;min-height:100vh}
+
+/* ── SIDEBAR ── */
+.sidebar{width:168px;min-width:168px;background:#fff;border-right:1px solid #E8E8E8;position:fixed;top:48px;left:0;bottom:0;overflow-y:auto;z-index:100;padding:8px 0 60px}
+.sb-section{margin-bottom:2px}
+.sb-section-header{display:flex;align-items:center;justify-content:space-between;padding:7px 14px 5px;cursor:pointer;user-select:none}
+.sb-section-label{font-size:12px;font-weight:700;color:#1A1A1A;display:flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%}
+.dot-orange{background:#FF6B2B}.dot-blue{background:#3B82F6}.dot-green{background:#10B981}.dot-purple{background:#8B5CF6}
+.sb-chevron{color:#aaa;font-size:10px;transition:transform .2s}
+.sb-items{padding-bottom:4px}
+.sb-item{display:flex;align-items:center;justify-content:space-between;padding:6px 14px 6px 26px;color:#555;font-size:12px;cursor:pointer;border-radius:0;transition:background .1s,color .1s;text-decoration:none;position:relative}
+.sb-item:hover{background:#F5F6F8;color:#1A1A1A}
+.sb-item.active{background:#FFF0E8;color:#FF6B2B;font-weight:600}
+.sb-item.active::before{content:'';position:absolute;left:0;top:4px;bottom:4px;width:3px;background:#FF6B2B;border-radius:0 3px 3px 0}
+.sb-item.done{color:#10B981}
+.sb-count{font-size:11px;color:#999;background:#F0F0F0;padding:1px 6px;border-radius:10px;font-weight:500}
+.sb-divider{height:1px;background:#F0F0F0;margin:6px 14px}
+.sb-bottom{position:absolute;bottom:0;left:0;right:0;border-top:1px solid #F0F0F0;background:#fff;padding:8px 0}
+.sb-bottom-item{display:flex;align-items:center;gap:8px;padding:7px 14px;color:#666;font-size:12px;cursor:pointer}
+.sb-bottom-item:hover{background:#F5F6F8}
+
+/* ── MAIN ── */
+.main{margin-left:168px;flex:1;min-width:0;padding:20px 24px 80px}
+
+/* ── Step bar ── */
+.step-bar{display:flex;align-items:center;gap:0;background:#fff;border:1px solid #E8E8E8;border-radius:8px;padding:10px 18px;margin-bottom:14px;overflow-x:auto}
+.step-item{display:flex;align-items:center;gap:7px;flex-shrink:0}
+.step-circle{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;border:2px solid #E0E0E0;color:#B0B0B0;background:#fff}
+.step-item.done .step-circle{background:#10B981;border-color:#10B981;color:#fff}
+.step-item.active .step-circle{background:#FF6B2B;border-color:#FF6B2B;color:#fff}
+.step-label{font-size:11px;font-weight:500;color:#bbb}
+.step-item.active .step-label{color:#FF6B2B;font-weight:600}
+.step-item.done .step-label{color:#10B981}
+.step-sep{width:24px;height:1px;background:#E0E0E0;margin:0 3px;flex-shrink:0}
+.step-sep.done{background:#10B981}
+
+/* ── Page title row ── */
+.page-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.page-title{font-size:18px;font-weight:700;color:#1A1A1A;letter-spacing:-.3px}
+
+/* ── Tag input bar ── */
+.loop-bar{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #E8E8E8;border-radius:8px;padding:10px 16px;margin-bottom:12px}
+.loop-bar-label{font-size:11px;font-weight:600;color:#888;white-space:nowrap}
+.loop-input{font-family:'JetBrains Mono',monospace;font-size:12px;border:1px solid #E0E0E0;border-radius:5px;padding:5px 10px;color:#1A1A1A;outline:none;background:#FAFAFA;width:160px}
+.loop-input:focus{border-color:#FF6B2B}
+.dcs-select{font-family:inherit;font-size:12px;border:1px solid #E0E0E0;border-radius:5px;padding:5px 10px;color:#1A1A1A;outline:none;background:#FAFAFA;cursor:pointer}
+.dcs-select:focus{border-color:#FF6B2B}
+.loop-sep{width:1px;height:20px;background:#E8E8E8}
+.pv-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:12px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600}
+.chip-pv{background:#EFF6FF;color:#2563EB;border:1px solid #BFDBFE}
+.chip-mv{background:#ECFDF5;color:#059669;border:1px solid #A7F3D0}
+.chip-sv{background:#FEF2F2;color:#DC2626;border:1px solid #FECACA}
+
+/* ── CHART AREA ── */
+.chart-area{background:#fff;border:1px solid #E8E8E8;border-radius:8px;margin-bottom:12px;overflow:hidden}
+.chart-toolbar{display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid #F0F0F0;flex-wrap:wrap}
+.chart-toolbar-title{font-size:13px;font-weight:700;color:#1A1A1A;margin-right:4px}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#555;cursor:pointer}
+.legend-dot{width:10px;height:3px;border-radius:2px;flex-shrink:0}
+.toolbar-sep{width:1px;height:16px;background:#E8E8E8;margin:0 4px}
+.tool-btn{display:flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid #E0E0E0;border-radius:4px;font-size:11px;font-weight:500;color:#555;background:#fff;cursor:pointer;transition:all .15s}
+.tool-btn:hover{background:#F5F6F8}
+.tool-btn.active{background:#FFF0E8;border-color:#FF6B2B;color:#FF6B2B}
+.crosshair-info{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:11px;color:#aaa;min-width:200px;text-align:right}
+
+.chart-panels{position:relative;padding:0 16px 12px}
+.chart-row{position:relative}
+.chart-row-label{position:absolute;left:-4px;top:8px;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600;color:#aaa;writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg);user-select:none}
+.chart-canvas-wrap{position:relative;margin-left:14px}
+
+/* ── Selection overlay ── */
+.sel-overlay{position:absolute;top:0;bottom:0;pointer-events:none;background:rgba(255,107,43,.1);border-left:2px solid #FF6B2B;border-right:2px solid #FF6B2B;z-index:10;display:none}
+
+/* ── Navigator (mini chart) ── */
+.nav-chart-wrap{padding:6px 16px 8px;border-top:1px solid #F5F5F5}
+.nav-label{font-size:10px;color:#bbb;margin-bottom:3px;font-weight:500}
+.nav-canvas-wrap{position:relative}
+.nav-brush{position:absolute;top:0;bottom:0;background:rgba(255,107,43,.12);border-left:2px solid #FF6B2B;border-right:2px solid #FF6B2B;cursor:move}
+.nav-brush-handle{position:absolute;top:50%;transform:translateY(-50%);width:6px;height:20px;background:#FF6B2B;border-radius:3px;cursor:ew-resize}
+.nav-brush-handle.left{left:-4px}
+.nav-brush-handle.right{right:-4px}
+
+/* ── MODE bar ── */
+.mode-bar-canvas-wrap{position:relative}
+
+/* ── Region panel ── */
+.region-panel{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.rp-card{background:#fff;border:1px solid #E8E8E8;border-radius:8px}
+.rp-head{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid #F0F0F0}
+.rp-title{font-size:13px;font-weight:700;color:#1A1A1A;display:flex;align-items:center;gap:7px}
+.rp-title-icon{width:22px;height:22px;background:#FFF0E8;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px}
+.rp-body{padding:14px 16px}
+
+/* Candidate list */
+.cand-list{display:flex;flex-direction:column;gap:7px}
+.cand-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1.5px solid #E8E8E8;border-radius:7px;cursor:pointer;transition:all .15s}
+.cand-item:hover{border-color:#FF6B2B;background:#FFF6F2}
+.cand-item.selected{border-color:#FF6B2B;background:#FFF0E8}
+.cand-rank{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;background:#F0F0F0;color:#666;flex-shrink:0}
+.cand-item.selected .cand-rank{background:#FF6B2B;color:#fff}
+.cand-info{flex:1;min-width:0}
+.cand-time{font-family:'JetBrains Mono',monospace;font-size:11px;color:#444;margin-bottom:2px}
+.cand-meta{font-size:10px;color:#888}
+.cand-score-bar{width:60px;height:6px;background:#F0F0F0;border-radius:3px;overflow:hidden;flex-shrink:0}
+.cand-score-fill{height:100%;border-radius:3px;background:#10B981}
+.cand-score-num{font-family:'JetBrains Mono',monospace;font-size:10px;color:#10B981;font-weight:600;min-width:24px;text-align:right}
+
+/* Region stats */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat-item{border:1px solid #F0F0F0;border-radius:6px;padding:10px 12px;background:#FAFAFA}
+.stat-label{font-size:10px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.stat-val{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:500;color:#1A1A1A}
+.stat-unit{font-size:10px;color:#aaa;margin-top:2px}
+.stat-item.highlight{border-color:#C8EEE0;background:#F0FAF6}
+.stat-item.highlight .stat-val{color:#059669}
+.stat-item.warn-item{border-color:#FDE8C8;background:#FFF8F0}
+.stat-item.warn-item .stat-val{color:#D97706}
+
+/* Manual range inputs */
+.manual-row{display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid #F0F0F0}
+.range-input{font-family:'JetBrains Mono',monospace;font-size:11px;border:1px solid #E0E0E0;border-radius:5px;padding:5px 8px;color:#1A1A1A;outline:none;background:#fff;flex:1}
+.range-input:focus{border-color:#FF6B2B}
+.manual-label{font-size:11px;color:#888;white-space:nowrap}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:5px;font-family:inherit;font-weight:600;border:none;cursor:pointer;transition:all .15s;border-radius:5px;font-size:12px;line-height:1}
+.btn-orange{background:#FF6B2B;color:#fff;padding:8px 16px}
+.btn-orange:hover{background:#E85A1A}
+.btn-outline{background:#fff;color:#555;border:1px solid #D4D4D4;padding:7px 14px}
+.btn-outline:hover{background:#F5F6F8}
+.btn-sm{padding:5px 10px;font-size:11px}
+
+/* ── Action bar ── */
+.action-bar{position:fixed;bottom:0;left:168px;right:0;background:#fff;border-top:1px solid #E8E8E8;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;z-index:50}
+.action-bar-info{font-size:12px;color:#666}
+.action-bar-info strong{color:#1A1A1A;font-weight:600}
+.action-bar-right{display:flex;gap:8px}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:72px;right:24px;background:#1A1A1A;color:#fff;font-size:12px;font-weight:500;padding:10px 16px;border-radius:6px;border-left:3px solid #FF6B2B;box-shadow:0 4px 20px rgba(0,0,0,.2);transform:translateY(60px);opacity:0;transition:all .25s cubic-bezier(.34,1.56,.64,1);z-index:999;pointer-events:none}
+.toast.show{transform:translateY(0);opacity:1}
+
+/* warn badge */
+.warn-badge{display:inline-flex;align-items:center;gap:4px;background:#FFF8F0;border:1px solid #FDE8C8;border-radius:4px;padding:2px 7px;font-size:10px;font-weight:600;color:#D97706}
+.ok-badge{display:inline-flex;align-items:center;gap:4px;background:#F0FAF6;border:1px solid #C8EEE0;border-radius:4px;padding:2px 7px;font-size:10px;font-weight:600;color:#059669}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="g-topbar">
+  <a class="g-logo"><div class="g-logo-icon">P</div><span class="g-logo-name">PID Tuning Tool</span></a>
+  <nav class="g-nav">
+    <a class="g-nav-item" href="#">데이터 관리</a>
+    <a class="g-nav-item pill" href="#">Tuning 작업</a>
+    <a class="g-nav-item" href="#">Loop 진단</a>
+    <a class="g-nav-item" href="#">보고서</a>
+    <a class="g-nav-item" href="#">설정</a>
+  </nav>
+  <div class="g-topbar-right">
+    <button class="g-icon-btn">🔔</button>
+    <button class="g-icon-btn">❓</button>
+    <div class="g-avatar">ENG</div>
+  </div>
+</header>
+
+<div class="layout">
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sb-section">
+    <div class="sb-section-header"><div class="sb-section-label"><span class="dot dot-orange"></span>작업함</div><span class="sb-chevron">▾</span></div>
+    <div class="sb-items">
+      <a class="sb-item active">현재 작업</a>
+      <a class="sb-item">진행중 <span class="sb-count">2</span></a>
+      <a class="sb-item">임시저장 <span class="sb-count">5</span></a>
+    </div>
+  </div>
+  <div class="sb-divider"></div>
+  <div class="sb-section">
+    <div class="sb-section-header"><div class="sb-section-label"><span class="dot dot-blue"></span>Tuning 이력</div><span class="sb-chevron">▾</span></div>
+    <div class="sb-items">
+      <a class="sb-item">완료 <span class="sb-count">24</span></a>
+      <a class="sb-item">검토대기 <span class="sb-count">3</span></a>
+      <a class="sb-item">적용완료 <span class="sb-count">18</span></a>
+    </div>
+  </div>
+  <div class="sb-divider"></div>
+  <div class="sb-section">
+    <div class="sb-section-header"><div class="sb-section-label"><span class="dot dot-green"></span>Loop 목록</div><span class="sb-chevron">▾</span></div>
+    <div class="sb-items">
+      <a class="sb-item">Temperature <span class="sb-count">12</span></a>
+      <a class="sb-item">Pressure <span class="sb-count">8</span></a>
+      <a class="sb-item">Flow <span class="sb-count">15</span></a>
+      <a class="sb-item">Level <span class="sb-count">6</span></a>
+    </div>
+  </div>
+  <div class="sb-divider"></div>
+  <div class="sb-section">
+    <div class="sb-section-header"><div class="sb-section-label"><span class="dot dot-purple"></span>진단함</div><span class="sb-chevron">▾</span></div>
+    <div class="sb-items">
+      <a class="sb-item">Plant Triage <span class="sb-count">41</span></a>
+      <a class="sb-item">불량 Loop <span class="sb-count" style="background:#FEE2E2;color:#DC2626">7</span></a>
+    </div>
+  </div>
+  <div class="sb-bottom">
+    <div class="sb-bottom-item">⭐ 즐겨찾기</div>
+    <div class="sb-bottom-item">⚙ 설정</div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- Step bar -->
+  <div class="step-bar">
+    <div class="step-item done"><div class="step-circle">✓</div><span class="step-label">데이터 수집</span></div>
+    <div class="step-sep done"></div>
+    <div class="step-item active"><div class="step-circle">2</div><span class="step-label">트렌드 분석</span></div>
+    <div class="step-sep"></div>
+    <div class="step-item"><div class="step-circle">3</div><span class="step-label">모델 식별</span></div>
+    <div class="step-sep"></div>
+    <div class="step-item"><div class="step-circle">4</div><span class="step-label">PID 추천</span></div>
+    <div class="step-sep"></div>
+    <div class="step-item"><div class="step-circle">5</div><span class="step-label">시뮬레이션</span></div>
+    <div class="step-sep"></div>
+    <div class="step-item"><div class="step-circle">6</div><span class="step-label">Loop 진단</span></div>
+  </div>
+
+  <!-- Page title -->
+  <div class="page-title-row">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="page-title">트렌드 분석</div>
+      <span style="font-size:11px;color:#aaa;padding:2px 8px;background:#F5F6F8;border:1px solid #E8E8E8;border-radius:10px">Step 2 / 6</span>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn btn-outline btn-sm" onclick="autoDetectRegions()">🔍 구간 자동 추천</button>
+      <button class="btn btn-outline btn-sm" onclick="resetZoom()">전체 보기</button>
+      <button class="btn btn-orange btn-sm" id="confirm-btn" disabled onclick="confirmRegion()">구간 확정 →</button>
+    </div>
+  </div>
+
+  <!-- Loop info bar -->
+  <div class="loop-bar">
+    <span class="loop-bar-label">Loop</span>
+    <input class="loop-input" id="loop-name" value="TIC-101" placeholder="Loop Tag Name">
+    <div class="loop-sep"></div>
+    <span class="loop-bar-label">DCS</span>
+    <select class="dcs-select" id="dcs-type">
+      <option value="honeywell">Honeywell Experion PKS</option>
+      <option value="yokogawa">Yokogawa CENTUM VP</option>
+      <option value="deltav">Emerson DeltaV</option>
+      <option value="abb">ABB 800xA</option>
+    </select>
+    <div class="loop-sep"></div>
+    <span class="pv-chip chip-pv">PV_TIC101</span>
+    <span class="pv-chip chip-mv">MV_TIC101</span>
+    <span class="pv-chip chip-sv">SP_TIC101</span>
+    <div style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:11px;color:#aaa" id="data-range-info">180 points · 180 min</div>
+  </div>
+
+  <!-- Chart area -->
+  <div class="chart-area">
+    <div class="chart-toolbar">
+      <span class="chart-toolbar-title">트렌드 차트</span>
+      <div class="toolbar-sep"></div>
+      <div class="legend-item"><div class="legend-dot" style="background:#2563EB"></div>PV</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#DC2626;border-top:1px dashed #DC2626;height:0;border-radius:0;margin-top:1px"></div>SV/SP</div>
+      <div class="legend-item" style="margin-left:4px"><div class="legend-dot" style="background:#059669"></div>MV</div>
+      <div class="toolbar-sep"></div>
+      <button class="tool-btn active" id="btn-sel" onclick="setMode('select')">🖱 구간 선택</button>
+      <button class="tool-btn" id="btn-zoom" onclick="setMode('zoom')">🔎 줌</button>
+      <button class="tool-btn" id="btn-pan" onclick="setMode('pan')">✋ 이동</button>
+      <div class="toolbar-sep"></div>
+      <span id="sel-badge"></span>
+      <span class="crosshair-info" id="crosshair-info">마우스를 차트 위로 이동하세요</span>
+    </div>
+
+    <div class="chart-panels" id="chart-panels">
+      <!-- PV + SV -->
+      <div class="chart-row" style="margin-bottom:2px">
+        <div class="chart-row-label">PV / SV</div>
+        <div class="chart-canvas-wrap" id="pv-wrap">
+          <canvas id="pv-chart" style="display:block"></canvas>
+          <div class="sel-overlay" id="pv-overlay"></div>
+        </div>
+      </div>
+      <!-- MV -->
+      <div class="chart-row" style="margin-bottom:2px">
+        <div class="chart-row-label">MV</div>
+        <div class="chart-canvas-wrap" id="mv-wrap">
+          <canvas id="mv-chart" style="display:block"></canvas>
+          <div class="sel-overlay" id="mv-overlay"></div>
+        </div>
+      </div>
+      <!-- MODE -->
+      <div class="chart-row">
+        <div class="chart-row-label">MODE</div>
+        <div class="chart-canvas-wrap" id="mode-wrap">
+          <canvas id="mode-chart" style="display:block"></canvas>
+          <div class="sel-overlay" id="mode-overlay"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigator -->
+    <div class="nav-chart-wrap">
+      <div class="nav-label">전체 범위 — 드래그로 보기 범위 조정</div>
+      <div class="nav-canvas-wrap" id="nav-wrap">
+        <canvas id="nav-chart" height="48" style="display:block;width:100%"></canvas>
+        <div class="nav-brush" id="nav-brush">
+          <div class="nav-brush-handle left" id="nbh-left"></div>
+          <div class="nav-brush-handle right" id="nbh-right"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Region panel -->
+  <div class="region-panel">
+    <!-- Candidate regions -->
+    <div class="rp-card">
+      <div class="rp-head">
+        <div class="rp-title"><div class="rp-title-icon">🎯</div>자동 추천 구간</div>
+        <span style="font-size:11px;color:#aaa">MV Step 변화 기반 스코어링</span>
+      </div>
+      <div class="rp-body">
+        <div class="cand-list" id="cand-list">
+          <div style="font-size:12px;color:#aaa;text-align:center;padding:20px">'구간 자동 추천' 버튼을 눌러 분석하세요</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Selected region stats -->
+    <div class="rp-card">
+      <div class="rp-head">
+        <div class="rp-title"><div class="rp-title-icon">📐</div>선택 구간 정보</div>
+        <span id="region-valid-badge"></span>
+      </div>
+      <div class="rp-body">
+        <div id="region-empty" style="font-size:12px;color:#aaa;text-align:center;padding:20px">
+          차트에서 구간을 드래그하여 선택하거나<br>좌측 추천 구간을 클릭하세요
+        </div>
+        <div id="region-stats" style="display:none">
+          <div class="stat-grid">
+            <div class="stat-item highlight">
+              <div class="stat-label">구간 길이</div>
+              <div class="stat-val" id="st-len">—</div>
+              <div class="stat-unit">분 (min)</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">MV Step 크기 (ΔMV)</div>
+              <div class="stat-val" id="st-dmv">—</div>
+              <div class="stat-unit">%</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">PV 변화량 (ΔPV)</div>
+              <div class="stat-val" id="st-dpv">—</div>
+              <div class="stat-unit">공학 단위</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">추정 Dead Time</div>
+              <div class="stat-val" id="st-dt">—</div>
+              <div class="stat-unit">분 (min)</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">신호 품질 (SNR)</div>
+              <div class="stat-val" id="st-snr">—</div>
+              <div class="stat-unit">dB</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">구간 스코어</div>
+              <div class="stat-val" id="st-score">—</div>
+              <div class="stat-unit">/ 100점</div>
+            </div>
+          </div>
+          <div class="manual-row">
+            <span class="manual-label">시작</span>
+            <input class="range-input" id="ri-start" type="text" placeholder="08:30:00" onchange="applyManualRange()">
+            <span class="manual-label">종료</span>
+            <input class="range-input" id="ri-end" type="text" placeholder="09:10:00" onchange="applyManualRange()">
+            <button class="btn btn-outline btn-sm" onclick="applyManualRange()">적용</button>
+          </div>
+          <div id="region-warn" style="display:none;margin-top:10px;padding:8px 12px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:6px;font-size:11px;color:#78350F;line-height:1.5"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div><!-- /layout -->
+
+<!-- Action bar -->
+<div class="action-bar">
+  <div class="action-bar-info">
+    <span id="ab-status">트렌드 차트에서 Tuning 구간을 선택하세요.</span>
+  </div>
+  <div class="action-bar-right">
+    <button class="btn btn-outline" onclick="goBack()">← 데이터 수집</button>
+    <button class="btn btn-orange" id="next-btn" disabled onclick="goNext()">모델 식별로 이동 →</button>
+  </div>
+</div>
+
+<div class="toast" id="toast-el"></div>
+
+<script>
+// ══════════════════════════════════════════
+// DATA GENERATION
+// ══════════════════════════════════════════
+function generateData() {
+  const rows=[], start=new Date('2024-03-15T08:00:00');
+  let pv=120,sp=120,mv=50,integral=0,prevErr=0;
+  for(let i=0;i<180;i++){
+    const t=new Date(start.getTime()+i*60000);
+    if(i===30){sp=130;mv=62;}
+    if(i===100){sp=125;mv=55;}
+    const noise=(Math.random()-.5)*.35;
+    const err=sp-pv;
+    integral+=err/60;
+    const der=(err-prevErr)*60; prevErr=err;
+    mv=Math.min(100,Math.max(0,mv+0.02*err));
+    pv=pv+1/3*(0.78*(mv-50)*0.6-(pv-120))+noise;
+    rows.push({
+      t:t.toTimeString().slice(0,8),
+      pv:+pv.toFixed(2), mv:+mv.toFixed(1), sv:sp,
+      mode:i<8?'MANUAL':'AUTO', idx:i
+    });
+  }
+  return rows;
+}
+
+const DATA = generateData();
+const LABELS = DATA.map(d=>d.t);
+let viewStart=0, viewEnd=DATA.length-1;
+let selStart=-1, selEnd=-1;
+let interactMode='select';
+let isDragging=false, dragStartX=0, dragStartSel=0;
+let navDragging=null;
+
+// ══════════════════════════════════════════
+// CHART SETUP
+// ══════════════════════════════════════════
+const chartDefaults = {
+  animation:false,
+  responsive:true,
+  maintainAspectRatio:false,
+  interaction:{mode:'index',intersect:false},
+  plugins:{legend:{display:false},tooltip:{enabled:false}},
+  scales:{
+    x:{display:false,ticks:{maxTicksLimit:10}},
+    y:{grid:{color:'#F0F0F0'},ticks:{font:{family:"'JetBrains Mono',monospace",size:10},color:'#aaa',maxTicksLimit:5}}
+  },
+  elements:{point:{radius:0,hoverRadius:3},line:{tension:.3,borderWidth:1.5}}
+};
+
+// PV Chart
+const pvCtx = document.getElementById('pv-chart').getContext('2d');
+document.getElementById('pv-chart').height = 140;
+const pvChart = new Chart(pvCtx,{
+  type:'line',
+  data:{
+    labels:LABELS,
+    datasets:[
+      {label:'PV',data:DATA.map(d=>d.pv),borderColor:'#2563EB',backgroundColor:'rgba(37,99,235,.06)',fill:true,order:1},
+      {label:'SV',data:DATA.map(d=>d.sv),borderColor:'#DC2626',borderDash:[4,3],backgroundColor:'transparent',fill:false,order:0},
+    ]
+  },
+  options:{...chartDefaults,
+    scales:{...chartDefaults.scales,
+      x:{...chartDefaults.scales.x,display:false},
+      y:{...chartDefaults.scales.y,title:{display:true,text:'°C',font:{size:9},color:'#aaa'}}
+    }
+  }
+});
+
+// MV Chart
+const mvCtx = document.getElementById('mv-chart').getContext('2d');
+document.getElementById('mv-chart').height = 100;
+const mvChart = new Chart(mvCtx,{
+  type:'line',
+  data:{labels:LABELS,datasets:[{label:'MV',data:DATA.map(d=>d.mv),borderColor:'#059669',backgroundColor:'rgba(5,150,105,.06)',fill:true,stepped:false}]},
+  options:{...chartDefaults,
+    scales:{...chartDefaults.scales,
+      x:{...chartDefaults.scales.x,display:false},
+      y:{...chartDefaults.scales.y,min:0,max:100,title:{display:true,text:'%',font:{size:9},color:'#aaa'}}
+    }
+  }
+});
+
+// MODE Chart
+const modeCtx = document.getElementById('mode-chart').getContext('2d');
+document.getElementById('mode-chart').height = 48;
+const modeColors = DATA.map(d=>d.mode==='AUTO'?'rgba(16,185,129,.7)':'rgba(245,158,11,.7)');
+const modeChart = new Chart(modeCtx,{
+  type:'bar',
+  data:{
+    labels:LABELS,
+    datasets:[{label:'MODE',data:DATA.map(d=>d.mode==='AUTO'?1:0.5),
+      backgroundColor:modeColors,borderWidth:0,barPercentage:1.0,categoryPercentage:1.0}]
+  },
+  options:{...chartDefaults,
+    scales:{
+      x:{display:false,grid:{display:false}},
+      y:{display:false,min:0,max:1,grid:{display:false}}
+    },
+    plugins:{...chartDefaults.plugins,
+      tooltip:{enabled:false},
+    }
+  }
+});
+
+// NAV Chart
+const navCtx = document.getElementById('nav-chart').getContext('2d');
+const navChart = new Chart(navCtx,{
+  type:'line',
+  data:{labels:LABELS,datasets:[
+    {label:'PV',data:DATA.map(d=>d.pv),borderColor:'rgba(37,99,235,.5)',borderWidth:1,backgroundColor:'rgba(37,99,235,.05)',fill:true},
+    {label:'MV',data:DATA.map(d=>d.mv),borderColor:'rgba(5,150,105,.4)',borderWidth:1,backgroundColor:'transparent',fill:false}
+  ]},
+  options:{animation:false,responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{enabled:false}},
+    elements:{point:{radius:0},line:{tension:.3,borderWidth:1}},
+    scales:{x:{display:false},y:{display:false}}
+  }
+});
+
+// ══════════════════════════════════════════
+// VIEW WINDOW
+// ══════════════════════════════════════════
+function updateChartView(){
+  const sliceLabels = LABELS.slice(viewStart,viewEnd+1);
+  pvChart.data.labels = sliceLabels;
+  pvChart.data.datasets[0].data = DATA.slice(viewStart,viewEnd+1).map(d=>d.pv);
+  pvChart.data.datasets[1].data = DATA.slice(viewStart,viewEnd+1).map(d=>d.sv);
+  mvChart.data.labels = sliceLabels;
+  mvChart.data.datasets[0].data = DATA.slice(viewStart,viewEnd+1).map(d=>d.mv);
+  modeChart.data.labels = sliceLabels;
+  modeChart.data.datasets[0].data = DATA.slice(viewStart,viewEnd+1).map(d=>d.mode==='AUTO'?1:0.5);
+  modeChart.data.datasets[0].backgroundColor = DATA.slice(viewStart,viewEnd+1).map(d=>d.mode==='AUTO'?'rgba(16,185,129,.7)':'rgba(245,158,11,.7)');
+  pvChart.update('none'); mvChart.update('none'); modeChart.update('none');
+  updateSelectionOverlay();
+  updateNavBrush();
+}
+
+function resetZoom(){viewStart=0;viewEnd=DATA.length-1;updateChartView();}
+
+// ══════════════════════════════════════════
+// NAVIGATOR BRUSH
+// ══════════════════════════════════════════
+function updateNavBrush(){
+  const wrap=document.getElementById('nav-wrap');
+  const W=wrap.clientWidth||600;
+  const total=DATA.length;
+  const left=(viewStart/total)*100;
+  const right=((viewEnd+1)/total)*100;
+  const brush=document.getElementById('nav-brush');
+  brush.style.left=left+'%';
+  brush.style.width=(right-left)+'%';
+}
+
+(function setupNav(){
+  const wrap=document.getElementById('nav-wrap');
+  const brush=document.getElementById('nav-brush');
+  const lh=document.getElementById('nbh-left');
+  const rh=document.getElementById('nbh-right');
+  let dragging=null, startX=0, startL=0, startR=0, startW=0;
+  const total=DATA.length;
+
+  function getIdx(px){
+    const W=wrap.clientWidth;
+    return Math.max(0,Math.min(total-1,Math.round((px/W)*total)));
+  }
+
+  lh.addEventListener('mousedown',e=>{dragging='left';startX=e.clientX;startL=parseFloat(brush.style.left||'0')/100*wrap.clientWidth;e.stopPropagation();e.preventDefault();});
+  rh.addEventListener('mousedown',e=>{dragging='right';startX=e.clientX;startR=(parseFloat(brush.style.left||'0')+parseFloat(brush.style.width||'100'))/100*wrap.clientWidth;e.stopPropagation();e.preventDefault();});
+  brush.addEventListener('mousedown',e=>{if(e.target===lh||e.target===rh)return;dragging='move';startX=e.clientX;startL=parseFloat(brush.style.left||'0')/100*wrap.clientWidth;startW=parseFloat(brush.style.width||'100')/100*wrap.clientWidth;e.preventDefault();});
+
+  document.addEventListener('mousemove',e=>{
+    if(!dragging)return;
+    const W=wrap.clientWidth;
+    const dx=e.clientX-startX;
+    if(dragging==='left'){
+      const newL=Math.max(0,Math.min(startL+dx,startL+startW-20));
+      viewStart=getIdx(newL);
+    } else if(dragging==='right'){
+      const newR=Math.min(W,Math.max(startR+dx,startL+20));
+      viewEnd=getIdx(newR);
+    } else if(dragging==='move'){
+      const newL=Math.max(0,Math.min(startL+dx,W-startW));
+      viewStart=getIdx(newL);
+      viewEnd=Math.min(total-1,getIdx(newL+startW));
+    }
+    if(viewStart>=viewEnd-5)viewEnd=Math.min(total-1,viewStart+5);
+    updateChartView();
+  });
+  document.addEventListener('mouseup',()=>{dragging=null;});
+})();
+
+// ══════════════════════════════════════════
+// CHART INTERACTION — SELECT / CROSSHAIR
+// ══════════════════════════════════════════
+function setMode(m){
+  interactMode=m;
+  ['sel','zoom','pan'].forEach(k=>{
+    const b=document.getElementById('btn-'+k);
+    if(b) b.classList.toggle('active',k===m);
+  });
+}
+
+function getChartX(canvas, clientX){
+  const rect=canvas.getBoundingClientRect();
+  const rel=clientX-rect.left;
+  const chart=pvChart;
+  const area=chart.chartArea;
+  if(!area)return-1;
+  const frac=(rel-area.left)/(area.right-area.left);
+  const n=viewEnd-viewStart;
+  return Math.max(0,Math.min(n,Math.round(frac*n)));
+}
+
+const panels=document.getElementById('chart-panels');
+panels.addEventListener('mousemove',e=>{
+  const canvas=document.getElementById('pv-chart');
+  const idx=getChartX(canvas,e.clientX);
+  if(idx<0)return;
+  const absIdx=viewStart+idx;
+  const d=DATA[absIdx];
+  if(d){
+    document.getElementById('crosshair-info').textContent=
+      `${d.t}  PV: ${d.pv.toFixed(2)}  SV: ${d.sv}  MV: ${d.mv.toFixed(1)}%  ${d.mode}`;
+  }
+  if(isDragging && interactMode==='select'){
+    const curX=viewStart+idx;
+    selStart=Math.min(dragStartSel,curX);
+    selEnd=Math.max(dragStartSel,curX);
+    updateSelectionOverlay();
+    updateRegionStats();
+  }
+  if(isDragging && interactMode==='pan'){
+    const dx=e.clientX-dragStartX;
+    const area=pvChart.chartArea;
+    if(!area)return;
+    const pxPerPt=(area.right-area.left)/(viewEnd-viewStart);
+    const shift=Math.round(dx/pxPerPt);
+    const len=viewEnd-viewStart;
+    let ns=dragStartSel-shift;
+    ns=Math.max(0,Math.min(DATA.length-1-len,ns));
+    viewStart=ns; viewEnd=ns+len;
+    dragStartX=e.clientX; dragStartSel=viewStart;
+    updateChartView();
+  }
+});
+
+panels.addEventListener('mousedown',e=>{
+  isDragging=true;
+  dragStartX=e.clientX;
+  const canvas=document.getElementById('pv-chart');
+  const idx=getChartX(canvas,e.clientX);
+  dragStartSel=viewStart+Math.max(0,idx);
+  if(interactMode==='select'){selStart=dragStartSel;selEnd=dragStartSel;}
+});
+
+panels.addEventListener('mouseup',e=>{
+  isDragging=false;
+  if(interactMode==='select' && selEnd>selStart+2){
+    updateRegionStats();
+    showToast('✅ 구간 선택 완료');
+  }
+});
+
+panels.addEventListener('mouseleave',()=>{isDragging=false;});
+
+// scroll zoom
+panels.addEventListener('wheel',e=>{
+  e.preventDefault();
+  const len=viewEnd-viewStart;
+  const delta=e.deltaY>0?Math.round(len*.1):-Math.round(len*.1);
+  const center=(viewStart+viewEnd)/2;
+  viewStart=Math.max(0,Math.round(center-len/2+delta));
+  viewEnd=Math.min(DATA.length-1,Math.round(center+len/2-delta));
+  if(viewEnd-viewStart<10){viewEnd=viewStart+10;}
+  updateChartView();
+},{passive:false});
+
+function updateSelectionOverlay(){
+  if(selStart<0||selEnd<=selStart){
+    ['pv-overlay','mv-overlay','mode-overlay'].forEach(id=>document.getElementById(id).style.display='none');
+    return;
+  }
+  const chart=pvChart;
+  const area=chart.chartArea;
+  if(!area)return;
+  const n=viewEnd-viewStart;
+  const pxPerPt=(area.right-area.left)/n;
+  const ls=Math.max(0,selStart-viewStart);
+  const le=Math.min(n,selEnd-viewStart);
+  const left=area.left+ls*pxPerPt;
+  const width=(le-ls)*pxPerPt;
+
+  ['pv-overlay','mv-overlay','mode-overlay'].forEach(id=>{
+    const ov=document.getElementById(id);
+    ov.style.display='block';
+    ov.style.left=left+'px';
+    ov.style.width=Math.max(4,width)+'px';
+  });
+}
+
+// ══════════════════════════════════════════
+// REGION STATS
+// ══════════════════════════════════════════
+function updateRegionStats(){
+  if(selEnd<=selStart+1)return;
+  const seg=DATA.slice(selStart,selEnd+1);
+  if(!seg.length)return;
+
+  const len=seg.length; // minutes (1 pt = 1 min)
+  const mvVals=seg.map(d=>d.mv);
+  const pvVals=seg.map(d=>d.pv);
+  const dMV=Math.abs(Math.max(...mvVals)-Math.min(...mvVals));
+  const dPV=Math.abs(pvVals[pvVals.length-1]-pvVals[0]);
+
+  // Dead time: find when PV starts responding after MV step
+  const mvStep=mvVals.findIndex((v,i)=>i>0&&Math.abs(v-mvVals[i-1])>2);
+  let deadTime=2;
+  if(mvStep>0){
+    const pvBase=pvVals.slice(0,mvStep+1).reduce((a,b)=>a+b,0)/(mvStep+1);
+    const thresh=pvBase+(pvVals[pvVals.length-1]-pvBase)*0.05;
+    const responseStart=pvVals.findIndex((v,i)=>i>mvStep&&Math.abs(v-pvBase)>Math.abs(thresh-pvBase));
+    if(responseStart>mvStep)deadTime=responseStart-mvStep;
+  }
+
+  // SNR
+  const pvMean=pvVals.reduce((a,b)=>a+b,0)/pvVals.length;
+  const signal=dPV;
+  const noise=Math.sqrt(pvVals.reduce((s,v)=>{
+    const diff=v-pvMean; return s+diff*diff;
+  },0)/pvVals.length)*2;
+  const snr=noise>0?20*Math.log10(signal/noise):20;
+
+  // Score
+  let score=100;
+  if(dMV<5)score-=30;
+  if(snr<3)score-=25;
+  if(len<20)score-=20;
+  if(len>120)score-=10;
+  score=Math.max(0,Math.min(100,score));
+
+  document.getElementById('region-empty').style.display='none';
+  document.getElementById('region-stats').style.display='block';
+  document.getElementById('st-len').textContent=len;
+  document.getElementById('st-dmv').textContent=dMV.toFixed(1);
+  document.getElementById('st-dpv').textContent=dPV.toFixed(2);
+  document.getElementById('st-dt').textContent=deadTime;
+  document.getElementById('st-snr').textContent=snr.toFixed(1);
+  document.getElementById('st-score').textContent=score;
+
+  // time range
+  document.getElementById('ri-start').value=DATA[selStart].t;
+  document.getElementById('ri-end').value=DATA[selEnd].t;
+
+  // warnings
+  const warns=[];
+  if(dMV<5)warns.push('⚠ MV Step 크기가 5% 미만입니다. 신호 대비 잡음이 높아 모델 식별 정확도가 저하될 수 있습니다.');
+  if(snr<3)warns.push('⚠ 신호 품질(SNR)이 낮습니다. 더 안정적인 구간을 선택하거나 Step 크기를 키우세요.');
+  if(len<15)warns.push('⚠ 구간이 너무 짧습니다. 최소 Time Constant의 5배 이상의 기간을 포함하세요.');
+
+  const rw=document.getElementById('region-warn');
+  if(warns.length){rw.style.display='block';rw.innerHTML=warns.join('<br>')}
+  else rw.style.display='none';
+
+  // badge
+  const rb=document.getElementById('region-valid-badge');
+  if(score>=70){rb.innerHTML='<span class="ok-badge">✓ 구간 적합</span>';}
+  else if(score>=40){rb.innerHTML='<span class="warn-badge">⚠ 주의 필요</span>';}
+  else{rb.innerHTML='<span style="display:inline-flex;align-items:center;gap:4px;background:#FEF2F2;border:1px solid #FECACA;border-radius:4px;padding:2px 7px;font-size:10px;font-weight:600;color:#DC2626">✕ 구간 불량</span>';}
+
+  // enable next
+  document.getElementById('confirm-btn').disabled=false;
+  document.getElementById('next-btn').disabled=score<20;
+  document.getElementById('ab-status').innerHTML=
+    `<strong>${DATA[selStart].t} ~ ${DATA[selEnd].t}</strong> 구간 선택됨 · 스코어: ${score}/100`;
+}
+
+// ══════════════════════════════════════════
+// AUTO DETECT REGIONS
+// ══════════════════════════════════════════
+function autoDetectRegions(){
+  const candidates=[];
+  const mv=DATA.map(d=>d.mv);
+
+  for(let i=5;i<DATA.length-20;i++){
+    const step=Math.abs(mv[i]-mv[i-1]);
+    if(step>=3){
+      const ss=Math.max(0,i-3);
+      const se=Math.min(DATA.length-1,i+50);
+      const seg=DATA.slice(ss,se);
+      const dMV=Math.abs(Math.max(...seg.map(d=>d.mv))-Math.min(...seg.map(d=>d.mv)));
+      const pvVals=seg.map(d=>d.pv);
+      const dPV=Math.abs(pvVals[pvVals.length-1]-pvVals[0]);
+      const noise=Math.sqrt(pvVals.reduce((s,v)=>{const m=pvVals.reduce((a,b)=>a+b,0)/pvVals.length;return s+(v-m)**2},0)/pvVals.length);
+      const snr=noise>0?20*Math.log10(dPV/noise):10;
+      let score=100;
+      if(dMV<5)score-=30; if(snr<3)score-=25; if(dPV<1)score-=20;
+      score=Math.max(0,Math.min(100,score));
+      candidates.push({ss,se,dMV:dMV.toFixed(1),dPV:dPV.toFixed(2),score,snr:snr.toFixed(1)});
+      i+=20; // skip ahead
+    }
+  }
+
+  // sort by score
+  candidates.sort((a,b)=>b.score-a.score);
+  const top=candidates.slice(0,5);
+
+  const list=document.getElementById('cand-list');
+  if(!top.length){list.innerHTML='<div style="font-size:12px;color:#aaa;text-align:center;padding:16px">MV Step 변화가 감지되지 않았습니다</div>';return;}
+
+  list.innerHTML=top.map((c,i)=>`
+    <div class="cand-item ${i===0?'selected':''}" onclick="selectCand(${c.ss},${c.se},this)">
+      <div class="cand-rank">${i+1}</div>
+      <div class="cand-info">
+        <div class="cand-time">${DATA[c.ss].t} ~ ${DATA[c.se].t}</div>
+        <div class="cand-meta">ΔMV ${c.dMV}%  ·  ΔPV ${c.dPV}  ·  SNR ${c.snr} dB</div>
+      </div>
+      <div class="cand-score-bar"><div class="cand-score-fill" style="width:${c.score}%"></div></div>
+      <div class="cand-score-num">${c.score}</div>
+    </div>`).join('');
+
+  // Auto select top candidate
+  selectCand(top[0].ss,top[0].se,list.querySelector('.cand-item'));
+  showToast(`🎯 ${top.length}개 구간 감지됨 · 최적 구간 자동 선택`);
+}
+
+function selectCand(ss,se,el){
+  document.querySelectorAll('.cand-item').forEach(e=>e.classList.remove('selected'));
+  if(el)el.classList.add('selected');
+  selStart=ss; selEnd=se;
+
+  // zoom to region
+  viewStart=Math.max(0,ss-10);
+  viewEnd=Math.min(DATA.length-1,se+10);
+  updateChartView();
+  updateSelectionOverlay();
+  updateRegionStats();
+}
+
+function applyManualRange(){
+  const ts=document.getElementById('ri-start').value.trim();
+  const te=document.getElementById('ri-end').value.trim();
+  const si=DATA.findIndex(d=>d.t===ts||d.t.startsWith(ts));
+  const ei=DATA.findIndex(d=>d.t===te||d.t.startsWith(te));
+  if(si>=0&&ei>si){
+    selStart=si;selEnd=ei;
+    viewStart=Math.max(0,si-5);viewEnd=Math.min(DATA.length-1,ei+5);
+    updateChartView();updateSelectionOverlay();updateRegionStats();
+    showToast('✅ 수동 범위 적용됨');
+  }
+}
+
+function confirmRegion(){
+  if(selEnd<=selStart)return;
+  showToast('✅ 구간 확정 완료 → 모델 식별 준비 완료');
+  document.getElementById('next-btn').disabled=false;
+}
+
+function goBack(){showToast('← Screen 1으로 이동 (구현 예정)');}
+function goNext(){showToast('→ Screen 3 모델 식별로 이동 (구현 예정)');}
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+window.addEventListener('load',()=>{
+  updateChartView();
+  setTimeout(autoDetectRegions, 400);
+});
+
+window.addEventListener('resize',()=>{
+  updateSelectionOverlay();
+  updateNavBrush();
+});
+
+let _tt;
+function showToast(msg){
+  const el=document.getElementById('toast-el');
+  el.textContent=msg;el.classList.add('show');
+  clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),2800);
+}
+</script>
+</body>
+</html>

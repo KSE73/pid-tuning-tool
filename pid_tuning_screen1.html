@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PID Tuning Tool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; font-family: 'Pretendard', -apple-system, sans-serif; background: #F5F6F8; color: #1A1A1A; font-size: 13px; }
+
+/* ═══════════════════════════════════
+   GLOBAL TOPBAR
+═══════════════════════════════════ */
+.g-topbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  height: 48px;
+  background: #1C1C1E;
+  display: flex; align-items: center;
+  padding: 0 16px;
+  gap: 0;
+}
+.g-logo {
+  display: flex; align-items: center; gap: 8px;
+  padding-right: 20px;
+  border-right: 1px solid #333;
+  margin-right: 4px;
+  text-decoration: none;
+}
+.g-logo-icon {
+  width: 28px; height: 28px;
+  background: #FF6B2B;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 14px; font-weight: 800;
+}
+.g-logo-name {
+  color: #fff; font-size: 14px; font-weight: 700; letter-spacing: -0.3px;
+}
+.g-nav {
+  display: flex; align-items: center; flex: 1;
+}
+.g-nav-item {
+  height: 48px;
+  display: flex; align-items: center;
+  padding: 0 14px;
+  color: #999;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.15s;
+  position: relative;
+  white-space: nowrap;
+}
+.g-nav-item:hover { color: #ddd; }
+.g-nav-item.active {
+  color: #fff;
+}
+.g-nav-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 10px; right: 10px;
+  height: 2px;
+  background: #FF6B2B;
+  border-radius: 2px 2px 0 0;
+}
+.g-nav-item.active-pill {
+  background: #FF6B2B;
+  color: #fff;
+  border-radius: 20px;
+  height: 28px;
+  padding: 0 14px;
+  margin: 0 2px;
+}
+.g-nav-item.active-pill::after { display: none; }
+.g-topbar-right {
+  display: flex; align-items: center; gap: 12px; margin-left: auto;
+}
+.g-icon-btn {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: #aaa; font-size: 16px; cursor: pointer;
+  position: relative; background: none; border: none;
+}
+.g-icon-btn:hover { background: #333; color: #fff; }
+.g-badge {
+  position: absolute; top: 2px; right: 2px;
+  width: 14px; height: 14px;
+  background: #FF6B2B; color: #fff;
+  font-size: 9px; font-weight: 700;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  border: 1.5px solid #1C1C1E;
+}
+.g-avatar {
+  width: 30px; height: 30px;
+  background: #444;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: #ccc; font-size: 11px; font-weight: 600;
+  cursor: pointer; border: 1.5px solid #555;
+}
+
+/* ═══════════════════════════════════
+   LAYOUT
+═══════════════════════════════════ */
+.layout {
+  display: flex;
+  padding-top: 48px;
+  min-height: 100vh;
+}
+
+/* ═══════════════════════════════════
+   LEFT SIDEBAR
+═══════════════════════════════════ */
+.sidebar {
+  width: 168px;
+  min-width: 168px;
+  background: #fff;
+  border-right: 1px solid #E8E8E8;
+  position: fixed;
+  top: 48px; left: 0; bottom: 0;
+  overflow-y: auto;
+  z-index: 100;
+  padding: 8px 0 20px;
+}
+
+.sb-section { margin-bottom: 2px; }
+
+.sb-section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 14px 5px;
+  cursor: pointer;
+  user-select: none;
+}
+.sb-section-label {
+  font-size: 12px; font-weight: 700;
+  color: #1A1A1A;
+  display: flex; align-items: center; gap: 6px;
+}
+.sb-section-label .dot {
+  width: 8px; height: 8px; border-radius: 50%;
+}
+.dot-orange { background: #FF6B2B; }
+.dot-blue   { background: #3B82F6; }
+.dot-green  { background: #10B981; }
+.dot-purple { background: #8B5CF6; }
+.sb-chevron { color: #aaa; font-size: 10px; transition: transform 0.2s; }
+.sb-chevron.open { transform: rotate(180deg); }
+
+.sb-items { padding-bottom: 4px; }
+
+.sb-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 14px 6px 26px;
+  color: #555;
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 0;
+  transition: background 0.1s, color 0.1s;
+  text-decoration: none;
+  position: relative;
+}
+.sb-item:hover { background: #F5F6F8; color: #1A1A1A; }
+.sb-item.active {
+  background: #FFF0E8;
+  color: #FF6B2B;
+  font-weight: 600;
+}
+.sb-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 4px; bottom: 4px;
+  width: 3px;
+  background: #FF6B2B;
+  border-radius: 0 3px 3px 0;
+}
+.sb-count {
+  font-size: 11px; color: #999;
+  background: #F0F0F0;
+  padding: 1px 6px; border-radius: 10px;
+  font-weight: 500;
+}
+.sb-item.active .sb-count { background: #FFE0D0; color: #FF6B2B; }
+
+.sb-divider { height: 1px; background: #F0F0F0; margin: 6px 14px; }
+
+.sb-bottom {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  border-top: 1px solid #F0F0F0;
+  background: #fff;
+  padding: 8px 0;
+}
+.sb-bottom-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 14px;
+  color: #666; font-size: 12px; cursor: pointer;
+}
+.sb-bottom-item:hover { background: #F5F6F8; color: #1A1A1A; }
+
+/* ═══════════════════════════════════
+   MAIN CONTENT
+═══════════════════════════════════ */
+.main {
+  margin-left: 168px;
+  flex: 1;
+  min-width: 0;
+  padding: 24px 28px 40px;
+}
+
+/* Page title */
+.page-title-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 20px;
+}
+.page-title {
+  font-size: 20px; font-weight: 700; color: #1A1A1A;
+  letter-spacing: -0.3px;
+}
+
+/* Tabs under page title */
+.page-tabs {
+  display: flex; gap: 0;
+  border-bottom: 1px solid #E8E8E8;
+  margin-bottom: 16px;
+}
+.page-tab {
+  padding: 8px 16px;
+  font-size: 13px; font-weight: 500; color: #888;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: all 0.15s;
+}
+.page-tab:hover { color: #444; }
+.page-tab.active { color: #FF6B2B; border-bottom-color: #FF6B2B; font-weight: 600; }
+
+/* Step progress bar */
+.step-bar {
+  display: flex; align-items: center; gap: 0;
+  background: #fff;
+  border: 1px solid #E8E8E8;
+  border-radius: 8px;
+  padding: 12px 20px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+}
+.step-item {
+  display: flex; align-items: center; gap: 8px;
+  flex-shrink: 0;
+}
+.step-circle {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+  border: 2px solid #E0E0E0;
+  color: #B0B0B0;
+  background: #fff;
+}
+.step-item.done .step-circle { background: #10B981; border-color: #10B981; color: #fff; }
+.step-item.active .step-circle { background: #FF6B2B; border-color: #FF6B2B; color: #fff; }
+.step-label { font-size: 12px; font-weight: 500; color: #aaa; }
+.step-item.active .step-label { color: #FF6B2B; font-weight: 600; }
+.step-item.done .step-label { color: #10B981; }
+.step-sep { width: 28px; height: 1px; background: #E0E0E0; margin: 0 4px; flex-shrink: 0; }
+.step-sep.done { background: #10B981; }
+
+/* ─ White card ─ */
+.card {
+  background: #fff;
+  border: 1px solid #E8E8E8;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+.card-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 18px;
+  border-bottom: 1px solid #F0F0F0;
+}
+.card-head-left { display: flex; align-items: center; gap: 8px; }
+.card-head-icon {
+  width: 24px; height: 24px;
+  background: #FFF0E8;
+  border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+}
+.card-head-title { font-size: 13px; font-weight: 700; color: #1A1A1A; }
+.card-head-sub { font-size: 11px; color: #aaa; margin-left: 4px; font-weight: 400; }
+.card-body { padding: 18px; }
+
+/* ─ Upload zone ─ */
+.upload-zone {
+  border: 1.5px dashed #D4D4D4;
+  border-radius: 8px;
+  padding: 40px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: #FAFAFA;
+}
+.upload-zone:hover, .upload-zone.drag { border-color: #FF6B2B; background: #FFF6F2; }
+.upload-zone-icon {
+  width: 48px; height: 48px;
+  background: #FFF0E8;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  margin: 0 auto 14px;
+  border: 1px solid rgba(255,107,43,0.2);
+}
+.upload-zone-title { font-size: 14px; font-weight: 600; color: #1A1A1A; margin-bottom: 5px; }
+.upload-zone-sub { font-size: 12px; color: #888; margin-bottom: 16px; line-height: 1.6; }
+.fmt-row { display: flex; justify-content: center; gap: 6px; margin-bottom: 16px; }
+.fmt-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; font-weight: 500;
+  background: #F0F4FF; color: #4B6EF5;
+  border: 1px solid #C7D4FD;
+  border-radius: 3px; padding: 2px 7px;
+}
+
+/* ─ Buttons ─ */
+.btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: inherit; font-weight: 600; border: none;
+  cursor: pointer; transition: all 0.15s; border-radius: 5px;
+  font-size: 12px; line-height: 1;
+}
+.btn-orange { background: #FF6B2B; color: #fff; padding: 8px 16px; }
+.btn-orange:hover { background: #E85A1A; }
+.btn-outline { background: #fff; color: #555; border: 1px solid #D4D4D4; padding: 7px 14px; }
+.btn-outline:hover { background: #F5F6F8; }
+.btn-sm { padding: 5px 10px; font-size: 11px; }
+.btn-text { background: none; border: none; color: #FF6B2B; font-size: 12px; font-weight: 500; cursor: pointer; padding: 4px 0; text-decoration: underline; text-underline-offset: 2px; }
+.btn-text:hover { color: #E85A1A; }
+
+/* ─ File info bar ─ */
+.file-info-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 18px;
+  background: #F0FAF6;
+  border: 1px solid #C8EEE0;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+.file-info-left { display: flex; align-items: center; gap: 12px; }
+.file-icon {
+  width: 36px; height: 36px;
+  background: #10B981;
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 16px;
+}
+.file-name { font-size: 13px; font-weight: 600; color: #1A1A1A; }
+.file-meta { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #666; margin-top: 2px; }
+
+/* ─ Quality grid ─ */
+.quality-row {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+  margin-bottom: 12px;
+}
+.q-item {
+  border: 1px solid #E8E8E8;
+  border-radius: 7px; padding: 12px 14px;
+  position: relative;
+}
+.q-item.ok    { border-color: #C8EEE0; background: #F0FAF6; }
+.q-item.warn  { border-color: #FDE8C8; background: #FFF8F0; }
+.q-item.error { border-color: #FEC8C8; background: #FFF0F0; }
+.q-label { font-size: 10px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
+.q-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px; font-weight: 500; color: #1A1A1A;
+}
+.q-item.ok    .q-val { color: #059669; }
+.q-item.warn  .q-val { color: #D97706; }
+.q-item.error .q-val { color: #DC2626; }
+.q-detail { font-size: 10px; color: #aaa; margin-top: 3px; }
+.q-badge {
+  position: absolute; top: 10px; right: 10px;
+  font-size: 12px;
+}
+
+/* ─ Warning box ─ */
+.warn-box {
+  background: #FFFBEB; border: 1px solid #FDE68A;
+  border-left: 3px solid #F59E0B;
+  border-radius: 6px; padding: 10px 14px;
+  font-size: 12px; color: #78350F; line-height: 1.6;
+}
+
+/* ─ Mapping ─ */
+.mapping-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.map-row {
+  display: flex; align-items: center; gap: 10px;
+  border: 1px solid #E8E8E8;
+  border-radius: 7px; padding: 10px 14px;
+  background: #FAFAFA;
+  transition: border-color 0.2s, background 0.2s;
+}
+.map-row.mapped { border-color: #C8EEE0; background: #F0FAF6; }
+.map-tag {
+  font-size: 10px; font-weight: 700;
+  color: #fff; padding: 3px 8px;
+  border-radius: 3px; min-width: 42px; text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  flex-shrink: 0;
+}
+.tag-ts { background: #0891B2; }
+.tag-pv { background: #2563EB; }
+.tag-mv { background: #059669; }
+.tag-sv { background: #DC2626; }
+.tag-mode { background: #7C3AED; }
+.map-content { flex: 1; min-width: 0; }
+.map-label { font-size: 11px; font-weight: 600; color: #555; margin-bottom: 4px; }
+.map-required { color: #DC2626; font-size: 9px; margin-left: 3px; }
+.map-select {
+  width: 100%;
+  font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  background: #fff; border: 1px solid #D4D4D4; border-radius: 5px;
+  padding: 5px 8px; color: #1A1A1A; outline: none; cursor: pointer;
+}
+.map-select:focus { border-color: #FF6B2B; }
+
+/* ─ Filter bar ─ */
+.filter-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 18px;
+  border-bottom: 1px solid #F0F0F0;
+  background: #FAFAFA;
+}
+.filter-label { font-size: 11px; color: #888; font-weight: 500; }
+.filter-select {
+  font-size: 12px; font-family: inherit;
+  background: #fff; border: 1px solid #D4D4D4; border-radius: 4px;
+  padding: 4px 8px; color: #333; outline: none; cursor: pointer;
+}
+.filter-select:focus { border-color: #FF6B2B; }
+
+/* ─ Table ─ */
+.tbl-wrap { overflow-x: auto; }
+.data-tbl {
+  width: 100%; border-collapse: collapse;
+  font-family: 'JetBrains Mono', monospace; font-size: 11px;
+}
+.data-tbl thead tr { background: #F5F6F8; }
+.data-tbl th {
+  padding: 9px 14px;
+  font-family: inherit; font-size: 11px; font-weight: 600;
+  color: #666; text-align: left;
+  border-bottom: 1px solid #E8E8E8;
+  white-space: nowrap;
+}
+.data-tbl th .role-badge {
+  display: inline-block; font-size: 9px; font-weight: 700;
+  color: #fff; border-radius: 2px; padding: 1px 5px;
+  margin-left: 4px; vertical-align: middle;
+}
+.data-tbl td {
+  padding: 7px 14px;
+  border-bottom: 1px solid #F5F5F5;
+  white-space: nowrap; color: #333;
+}
+.data-tbl tr:hover td { background: #FAFAFA; }
+.td-ts { color: #94A3B8 !important; }
+.td-auto   { color: #059669 !important; font-weight: 600; }
+.td-manual { color: #D97706 !important; font-weight: 600; }
+.td-cas    { color: #7C3AED !important; font-weight: 600; }
+
+/* ─ Table footer ─ */
+.tbl-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 18px;
+  border-top: 1px solid #F0F0F0;
+  background: #FAFAFA;
+  font-size: 11px; color: #888;
+}
+
+/* ─ Bottom action bar ─ */
+.action-bar {
+  position: fixed; bottom: 0; left: 168px; right: 0;
+  background: #fff; border-top: 1px solid #E8E8E8;
+  padding: 12px 28px;
+  display: flex; align-items: center; justify-content: space-between;
+  z-index: 50;
+}
+.action-bar-info { font-size: 12px; color: #666; }
+.action-bar-info strong { color: #1A1A1A; font-weight: 600; }
+.action-bar-right { display: flex; gap: 8px; }
+
+/* ─ Hidden ─ */
+.hidden { display: none !important; }
+
+/* ─ Toast ─ */
+.toast {
+  position: fixed; bottom: 72px; right: 28px;
+  background: #1A1A1A; color: #fff;
+  font-size: 12px; font-weight: 500;
+  padding: 10px 18px; border-radius: 6px;
+  border-left: 3px solid #FF6B2B;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  transform: translateY(60px); opacity: 0;
+  transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+  z-index: 999; pointer-events: none;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* ─ Inline divider ─ */
+.divider { border: none; border-top: 1px solid #F0F0F0; margin: 14px 0; }
+
+#file-input-el { display: none; }
+</style>
+</head>
+<body>
+
+<!-- ═══ GLOBAL TOPBAR ═══ -->
+<header class="g-topbar">
+  <a class="g-logo">
+    <div class="g-logo-icon">P</div>
+    <span class="g-logo-name">PID Tuning Tool</span>
+  </a>
+
+  <nav class="g-nav">
+    <a class="g-nav-item" href="#">데이터 관리</a>
+    <a class="g-nav-item active-pill" href="#">Tuning 작업</a>
+    <a class="g-nav-item" href="#">Loop 진단</a>
+    <a class="g-nav-item" href="#">보고서</a>
+    <a class="g-nav-item" href="#">설정</a>
+  </nav>
+
+  <div class="g-topbar-right">
+    <button class="g-icon-btn" title="알림">
+      🔔
+      <div class="g-badge">3</div>
+    </button>
+    <button class="g-icon-btn" title="도움말">❓</button>
+    <div class="g-avatar">ENG</div>
+    <button class="g-icon-btn">⋯</button>
+  </div>
+</header>
+
+<!-- ═══ LAYOUT ═══ -->
+<div class="layout">
+
+  <!-- ═══ LEFT SIDEBAR ═══ -->
+  <aside class="sidebar">
+
+    <!-- 작업함 -->
+    <div class="sb-section">
+      <div class="sb-section-header" onclick="toggleSection(this)">
+        <div class="sb-section-label">
+          <span class="dot dot-orange"></span> 작업함
+        </div>
+        <span class="sb-chevron open">▾</span>
+      </div>
+      <div class="sb-items">
+        <a class="sb-item active">현재 작업</a>
+        <a class="sb-item">진행중 <span class="sb-count">2</span></a>
+        <a class="sb-item">임시저장 <span class="sb-count">5</span></a>
+      </div>
+    </div>
+
+    <div class="sb-divider"></div>
+
+    <!-- Tuning 이력 -->
+    <div class="sb-section">
+      <div class="sb-section-header" onclick="toggleSection(this)">
+        <div class="sb-section-label">
+          <span class="dot dot-blue"></span> Tuning 이력
+        </div>
+        <span class="sb-chevron open">▾</span>
+      </div>
+      <div class="sb-items">
+        <a class="sb-item">완료 <span class="sb-count">24</span></a>
+        <a class="sb-item">검토대기 <span class="sb-count">3</span></a>
+        <a class="sb-item">적용완료 <span class="sb-count">18</span></a>
+      </div>
+    </div>
+
+    <div class="sb-divider"></div>
+
+    <!-- Loop 목록 -->
+    <div class="sb-section">
+      <div class="sb-section-header" onclick="toggleSection(this)">
+        <div class="sb-section-label">
+          <span class="dot dot-green"></span> Loop 목록
+        </div>
+        <span class="sb-chevron open">▾</span>
+      </div>
+      <div class="sb-items">
+        <a class="sb-item">Temperature <span class="sb-count">12</span></a>
+        <a class="sb-item">Pressure <span class="sb-count">8</span></a>
+        <a class="sb-item">Flow <span class="sb-count">15</span></a>
+        <a class="sb-item">Level <span class="sb-count">6</span></a>
+      </div>
+    </div>
+
+    <div class="sb-divider"></div>
+
+    <!-- 진단함 -->
+    <div class="sb-section">
+      <div class="sb-section-header" onclick="toggleSection(this)">
+        <div class="sb-section-label">
+          <span class="dot dot-purple"></span> 진단함
+        </div>
+        <span class="sb-chevron open">▾</span>
+      </div>
+      <div class="sb-items">
+        <a class="sb-item">Plant Triage <span class="sb-count">41</span></a>
+        <a class="sb-item">불량 Loop <span class="sb-count" style="background:#FEE2E2;color:#DC2626;">7</span></a>
+      </div>
+    </div>
+
+    <div class="sb-divider" style="margin-top:auto;"></div>
+
+    <div style="height:80px;"></div><!-- spacer for bottom items -->
+
+    <div class="sb-bottom">
+      <div class="sb-bottom-item">⭐ 즐겨찾기</div>
+      <div class="sb-bottom-item">⚙ 설정</div>
+    </div>
+
+  </aside>
+
+  <!-- ═══ MAIN ═══ -->
+  <main class="main" style="padding-bottom: 80px;">
+
+    <!-- Page title row -->
+    <div class="page-title-row">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="page-title">데이터 수집</div>
+        <span style="font-size:11px;color:#aaa;padding:2px 8px;background:#F5F6F8;border:1px solid #E8E8E8;border-radius:10px;">Step 1 / 6</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn btn-outline btn-sm" onclick="loadSample()">샘플 데이터 불러오기</button>
+        <button class="btn btn-orange btn-sm" onclick="document.getElementById('file-input-el').click()">+ 파일 업로드</button>
+      </div>
+    </div>
+
+    <!-- Step progress -->
+    <div class="step-bar">
+      <div class="step-item active">
+        <div class="step-circle">1</div>
+        <span class="step-label">데이터 수집</span>
+      </div>
+      <div class="step-sep"></div>
+      <div class="step-item">
+        <div class="step-circle">2</div>
+        <span class="step-label">트렌드 분석</span>
+      </div>
+      <div class="step-sep"></div>
+      <div class="step-item">
+        <div class="step-circle">3</div>
+        <span class="step-label">모델 식별</span>
+      </div>
+      <div class="step-sep"></div>
+      <div class="step-item">
+        <div class="step-circle">4</div>
+        <span class="step-label">PID 추천</span>
+      </div>
+      <div class="step-sep"></div>
+      <div class="step-item">
+        <div class="step-circle">5</div>
+        <span class="step-label">시뮬레이션</span>
+      </div>
+      <div class="step-sep"></div>
+      <div class="step-item">
+        <div class="step-circle">6</div>
+        <span class="step-label">Loop 진단</span>
+      </div>
+    </div>
+
+    <!-- File info (shown after load) -->
+    <div class="file-info-bar hidden" id="file-info-bar">
+      <div class="file-info-left">
+        <div class="file-icon">✓</div>
+        <div>
+          <div class="file-name" id="fi-name">—</div>
+          <div class="file-meta" id="fi-meta">—</div>
+        </div>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="resetAll()">다른 파일 선택</button>
+    </div>
+
+    <!-- Upload card (hidden after load) -->
+    <div class="card" id="upload-card">
+      <div class="card-head">
+        <div class="card-head-left">
+          <div class="card-head-icon">📂</div>
+          <span class="card-head-title">파일 업로드</span>
+          <span class="card-head-sub">CSV · Excel 형식 지원</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="upload-zone" id="drop-zone"
+             onclick="document.getElementById('file-input-el').click()"
+             ondragover="ev(event,'drag')" ondragleave="ev(event,'leave')" ondrop="ev(event,'drop')">
+          <div class="upload-zone-icon">📊</div>
+          <div class="upload-zone-title">파일을 드래그하거나 클릭하여 업로드</div>
+          <div class="upload-zone-sub">공정 히스토리 데이터 파일을 선택하세요<br>최대 50 MB · Honeywell PHD / Historian Export 포맷 지원</div>
+          <div class="fmt-row">
+            <span class="fmt-tag">.CSV</span>
+            <span class="fmt-tag">.XLSX</span>
+            <span class="fmt-tag">.XLS</span>
+          </div>
+          <button class="btn btn-orange" onclick="event.stopPropagation();document.getElementById('file-input-el').click()">
+            📁 파일 선택
+          </button>
+        </div>
+        <input type="file" id="file-input-el" accept=".csv,.xlsx,.xls" onchange="onFileSelect(event)">
+      </div>
+    </div>
+
+    <!-- Quality card -->
+    <div class="card hidden" id="quality-card">
+      <div class="card-head">
+        <div class="card-head-left">
+          <div class="card-head-icon">🔬</div>
+          <span class="card-head-title">데이터 품질 진단</span>
+        </div>
+        <span id="q-overall" style="font-size:12px;font-weight:600;"></span>
+      </div>
+      <div class="card-body">
+        <div class="quality-row" id="quality-row"></div>
+        <div id="warn-box" class="warn-box hidden"></div>
+      </div>
+    </div>
+
+    <!-- Mapping card -->
+    <div class="card hidden" id="mapping-card">
+      <div class="card-head">
+        <div class="card-head-left">
+          <div class="card-head-icon">🔌</div>
+          <span class="card-head-title">컬럼 매핑</span>
+          <span class="card-head-sub">파일 컬럼을 공정 변수에 연결</span>
+        </div>
+        <span id="map-status" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#aaa;"></span>
+      </div>
+      <div class="card-body">
+        <p style="font-size:12px;color:#888;margin-bottom:14px;">
+          업로드된 파일의 컬럼을 공정 변수에 매핑하세요.
+          <span style="color:#DC2626;">*</span> 표시는 필수 항목입니다.
+        </p>
+        <div class="mapping-grid" id="mapping-grid"></div>
+      </div>
+    </div>
+
+    <!-- Preview card -->
+    <div class="card hidden" id="preview-card">
+      <div class="card-head">
+        <div class="card-head-left">
+          <div class="card-head-icon">📋</div>
+          <span class="card-head-title">데이터 미리보기</span>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="toggleFull()">전체 보기</button>
+      </div>
+      <div class="filter-bar" id="filter-bar">
+        <span class="filter-label">표시 컬럼</span>
+        <label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer;">
+          <input type="checkbox" id="chk-mapped" checked onchange="renderPreview()"> 매핑된 컬럼만
+        </label>
+        <div style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:11px;color:#aaa;" id="row-info">—</div>
+      </div>
+      <div class="tbl-wrap" id="tbl-wrap" style="max-height:300px;overflow-y:auto;">
+        <table class="data-tbl">
+          <thead id="tbl-head"></thead>
+          <tbody id="tbl-body"></tbody>
+        </table>
+      </div>
+      <div class="tbl-footer">
+        <span id="tbl-foot-l">—</span>
+        <span style="color:#bbb;">상위 50행 표시</span>
+      </div>
+    </div>
+
+  </main>
+</div><!-- /layout -->
+
+<!-- Action bar -->
+<div class="action-bar hidden" id="action-bar">
+  <div class="action-bar-info">
+    <strong id="ab-summary">—</strong>&nbsp;&nbsp;매핑 완료 · 다음 단계로 진행할 수 있습니다.
+  </div>
+  <div class="action-bar-right">
+    <button class="btn btn-outline" onclick="resetAll()">취소</button>
+    <button class="btn btn-orange" onclick="next()">트렌드 분석으로 이동 →</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── State ───────────────────────────────────
+let S = { data:[], headers:[], file:'', mapping:{ts:'',pv:'',mv:'',sv:'',mode:''} };
+
+const VARS = [
+  { k:'ts',   label:'Timestamp', req:true,  tag:'TS',   tc:'tag-ts',   desc:'시간축' },
+  { k:'pv',   label:'PV',        req:true,  tag:'PV',   tc:'tag-pv',   desc:'Process Variable' },
+  { k:'mv',   label:'MV',        req:true,  tag:'MV',   tc:'tag-mv',   desc:'Manipulated Variable' },
+  { k:'sv',   label:'SV / SP',   req:false, tag:'SV',   tc:'tag-sv',   desc:'Set Value (선택)' },
+  { k:'mode', label:'MODE',      req:false, tag:'MODE', tc:'tag-mode', desc:'Control Mode (선택)' },
+];
+
+// ─── Drag & Drop ─────────────────────────────
+function ev(e, type) {
+  e.preventDefault();
+  const z = document.getElementById('drop-zone');
+  if (type === 'drag') z.classList.add('drag');
+  else if (type === 'leave') z.classList.remove('drag');
+  else if (type === 'drop') { z.classList.remove('drag'); processFile(e.dataTransfer.files[0]); }
+}
+function onFileSelect(e) { if (e.target.files[0]) processFile(e.target.files[0]); }
+
+// ─── File processing ─────────────────────────
+function processFile(f) {
+  const ext = f.name.split('.').pop().toLowerCase();
+  toast('📂 파일 파싱 중...');
+  if (ext === 'csv') {
+    Papa.parse(f, { header:true, skipEmptyLines:true, dynamicTyping:true, complete: r => loaded(r.data, r.meta.fields, f) });
+  } else {
+    const rd = new FileReader();
+    rd.onload = e => {
+      const wb = XLSX.read(e.target.result, {type:'array',cellDates:true});
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {defval:null});
+      loaded(rows, rows.length ? Object.keys(rows[0]) : [], f);
+    };
+    rd.readAsArrayBuffer(f);
+  }
+}
+
+function loaded(data, headers, f) {
+  S.data = data; S.headers = headers; S.file = f.name;
+  toast('✅ ' + data.length.toLocaleString() + '행 로드 완료');
+
+  show('file-info-bar'); hide('upload-card');
+  document.getElementById('fi-name').textContent = f.name;
+  document.getElementById('fi-meta').textContent =
+    data.length.toLocaleString() + ' rows  ·  ' + headers.length + ' columns  ·  ' + (f.size/1024).toFixed(1) + ' KB';
+
+  renderQuality(); renderMapping(); renderPreview();
+  show('quality-card'); show('mapping-card'); show('preview-card');
+}
+
+// ─── Quality ─────────────────────────────────
+function renderQuality() {
+  const n = S.data.length;
+  let miss=0, total=0;
+  S.headers.forEach(h => S.data.forEach(r => { total++; if(r[h]==null||r[h]==='') miss++; }));
+  const missPct = total ? (miss/total*100).toFixed(1) : '0.0';
+  const missN = parseFloat(missPct);
+  const missC = missN>10?'error':missN>5?'warn':'ok';
+
+  let sampText='—', sampC='ok';
+  const tc = autoDetect('ts');
+  if (tc && n>5) {
+    const times = S.data.slice(0,20).map(r=>new Date(r[tc])).filter(d=>!isNaN(d));
+    if (times.length>2) {
+      const diffs=[]; for(let i=1;i<times.length;i++) diffs.push(times[i]-times[i-1]);
+      const avg=diffs.reduce((a,b)=>a+b,0)/diffs.length;
+      const std=Math.sqrt(diffs.reduce((a,b)=>a+(b-avg)**2,0)/diffs.length);
+      sampText = avg<1000?`${avg.toFixed(0)} ms`:avg<60000?`${(avg/1000).toFixed(1)} s`:`${(avg/60000).toFixed(1)} min`;
+      sampC = (std/avg)>0.2?'warn':'ok';
+    }
+  }
+
+  let durText='—';
+  if (tc && n>1) {
+    const t0=new Date(S.data[0][tc]), t1=new Date(S.data[n-1][tc]);
+    if (!isNaN(t0)&&!isNaN(t1)) {
+      const ms=t1-t0;
+      durText = ms<60000?`${(ms/1000).toFixed(0)} s`:ms<3600000?`${(ms/60000).toFixed(1)} min`:`${(ms/3600000).toFixed(1)} h`;
+    }
+  }
+
+  const items = [
+    { label:'총 데이터 행수', val:n.toLocaleString(), detail:'데이터 포인트 수', cls:n>100?'ok':'warn', icon:n>100?'✓':'⚠' },
+    { label:'결측값 비율', val:missPct+'%', detail:`${miss.toLocaleString()} / ${total.toLocaleString()} cells`, cls:missC, icon:missC==='ok'?'✓':'⚠' },
+    { label:'샘플링 간격', val:sampText, detail:'평균 샘플링 주기', cls:sampC, icon:sampC==='ok'?'✓':'⚠' },
+    { label:'데이터 기간', val:durText, detail:'전체 시간 범위', cls:'ok', icon:'✓' },
+  ];
+
+  document.getElementById('quality-row').innerHTML = items.map(it => `
+    <div class="q-item ${it.cls}">
+      <div class="q-label">${it.label}</div>
+      <div class="q-val">${it.val}</div>
+      <div class="q-detail">${it.detail}</div>
+      <div class="q-badge">${it.icon}</div>
+    </div>`).join('');
+
+  const warns = [];
+  if (missN>5) warns.push('⚠ 결측값 비율이 ' + missPct + '%입니다. 모델 식별 정확도가 저하될 수 있습니다.');
+  if (sampC==='warn') warns.push('⚠ 샘플링 간격이 불규칙합니다. 리샘플링이 권장됩니다.');
+  if (n<100) warns.push('⚠ 데이터 포인트가 100행 미만입니다. PID Tuning에는 충분한 Step Response 데이터가 필요합니다.');
+
+  const wb = document.getElementById('warn-box');
+  if (warns.length) { wb.innerHTML = warns.join('<br>'); show('warn-box'); }
+  else hide('warn-box');
+
+  const ov = document.getElementById('q-overall');
+  const anyE = missC==='error'||n<50, anyW = missC==='warn'||sampC==='warn'||n<100;
+  ov.textContent = anyE?'🔴 품질 불량':anyW?'🟡 주의 필요':'🟢 양호';
+  ov.style.color = anyE?'#DC2626':anyW?'#D97706':'#059669';
+}
+
+// ─── Mapping ─────────────────────────────────
+function autoDetect(role) {
+  const p = {ts:['time','timestamp','datetime','date','시간','날짜'],
+             pv:['pv','process_var','pv_','_pv'],
+             mv:['mv','output','op','mv_','_mv'],
+             sv:['sv','sp','setpoint','set_point','sv_','_sv'],
+             mode:['mode','status','상태','모드']};
+  return S.headers.find(h => (p[role]||[]).some(k=>h.toLowerCase().includes(k))) || '';
+}
+
+function renderMapping() {
+  VARS.forEach(v => { S.mapping[v.k] = autoDetect(v.k); });
+  const opts = ['<option value="">— 선택 안 함 —</option>',
+    ...S.headers.map(h=>`<option value="${h}">${h}</option>`)].join('');
+
+  document.getElementById('mapping-grid').innerHTML = VARS.map(v => `
+    <div class="map-row ${S.mapping[v.k]?'mapped':''}" id="mr-${v.k}">
+      <span class="map-tag ${v.tc}">${v.tag}</span>
+      <div class="map-content">
+        <div class="map-label">${v.label}${v.req?'<span class="map-required">*필수</span>':''}</div>
+        <select class="map-select" onchange="onMap('${v.k}',this.value)">${opts}</select>
+      </div>
+    </div>`).join('');
+
+  VARS.forEach(v => {
+    const sel = document.querySelector(`#mr-${v.k} select`);
+    if (sel && S.mapping[v.k]) sel.value = S.mapping[v.k];
+  });
+  updateMapStatus();
+}
+
+function onMap(k, val) {
+  S.mapping[k] = val;
+  document.getElementById(`mr-${k}`).classList.toggle('mapped', !!val);
+  updateMapStatus(); renderPreview();
+}
+
+function updateMapStatus() {
+  const cnt = Object.values(S.mapping).filter(v=>!!v).length;
+  document.getElementById('map-status').textContent = cnt + ' / 5 매핑됨';
+  const ok = S.mapping.ts && S.mapping.pv && S.mapping.mv;
+  if (ok) {
+    show('action-bar');
+    document.getElementById('ab-summary').textContent =
+      `${S.data.length.toLocaleString()}행 · PV: ${S.mapping.pv} · MV: ${S.mapping.mv}`;
+  } else hide('action-bar');
+}
+
+// ─── Preview ─────────────────────────────────
+function renderPreview() {
+  const onlyMapped = document.getElementById('chk-mapped')?.checked;
+  const roleMap = {}; Object.entries(S.mapping).forEach(([r,c])=>{ if(c) roleMap[c]=r; });
+  const mappedCols = Object.values(S.mapping).filter(v=>!!v);
+  const cols = onlyMapped
+    ? mappedCols
+    : [...mappedCols, ...S.headers.filter(h=>!mappedCols.includes(h)).slice(0,4)];
+
+  const tagColors = {ts:'#0891B2',pv:'#2563EB',mv:'#059669',sv:'#DC2626',mode:'#7C3AED'};
+
+  document.getElementById('tbl-head').innerHTML = `<tr>${cols.map(h=>{
+    const r=roleMap[h];
+    return `<th>${h}${r?`<span class="role-badge" style="background:${tagColors[r]||'#888'}">${r.toUpperCase()}</span>`:''}`;
+  }).join('')}</tr>`;
+
+  const rows = S.data.slice(0,50);
+  document.getElementById('tbl-body').innerHTML = rows.map(row=>`<tr>${
+    cols.map(h=>{
+      const r=roleMap[h], v=row[h];
+      let cls='';
+      if(r==='ts') cls='td-ts';
+      if(r==='mode'&&v!=null){
+        const s=String(v).toUpperCase();
+        cls=s.includes('AUTO')?'td-auto':s.includes('MAN')?'td-manual':s.includes('CAS')?'td-cas':'';
+      }
+      return `<td class="${cls}">${v==null?'<span style="color:#D0D0D0;">—</span>':v}</td>`;
+    }).join('')
+  }</tr>`).join('');
+
+  const ri = `총 ${S.data.length.toLocaleString()}행 · ${S.headers.length}컬럼`;
+  document.getElementById('row-info').textContent = ri;
+  document.getElementById('tbl-foot-l').textContent = ri;
+}
+
+function toggleFull() {
+  const w = document.getElementById('tbl-wrap');
+  w.style.maxHeight = w.style.maxHeight === 'none' ? '300px' : 'none';
+}
+
+// ─── Sample data ─────────────────────────────
+function loadSample() {
+  toast('🔬 TIC-101 샘플 데이터 생성 중...');
+  const rows=[]; const start=new Date('2024-03-15T08:00:00');
+  let pv=120, sp=120, mv=50, integral=0, prevErr=0;
+  const Kp=1.2, Ti=2.5, Td=0.3, dt=1/60;
+
+  for(let i=0;i<180;i++){
+    const t=new Date(start.getTime()+i*60000);
+    if(i===30) sp=130; if(i===100) sp=125;
+    const noise=(Math.random()-0.5)*0.4;
+    const err=sp-pv;
+    integral+=err*dt;
+    mv=Math.min(100,Math.max(0,Kp*(err+integral/Ti+Td*(err-prevErr)/dt)+50));
+    prevErr=err;
+    pv=pv+dt/3*(0.8*mv*0.6-(pv-100))+noise;
+    rows.push({
+      'Timestamp':t.toISOString().replace('T',' ').slice(0,19),
+      'PV_TIC101':+pv.toFixed(2),'MV_TIC101':+mv.toFixed(1),
+      'SP_TIC101':sp,'Mode_TIC101':i<10?'MANUAL':'AUTO'
+    });
+  }
+
+  S.data=rows; S.headers=['Timestamp','PV_TIC101','MV_TIC101','SP_TIC101','Mode_TIC101']; S.file='sample_TIC101.csv';
+  hide('upload-card'); show('file-info-bar');
+  document.getElementById('fi-name').textContent='sample_TIC101.csv';
+  document.getElementById('fi-meta').textContent='180 rows  ·  5 columns  ·  샘플 데이터 (TIC-101 온도 제어기)';
+  renderQuality(); renderMapping(); renderPreview();
+  show('quality-card'); show('mapping-card'); show('preview-card');
+  toast('✅ 샘플 데이터 로드 완료 (TIC-101 · 180 min)');
+}
+
+// ─── Reset ────────────────────────────────────
+function resetAll() {
+  S={data:[],headers:[],file:'',mapping:{ts:'',pv:'',mv:'',sv:'',mode:''}};
+  document.getElementById('file-input-el').value='';
+  ['file-info-bar','quality-card','mapping-card','preview-card','action-bar'].forEach(hide);
+  show('upload-card');
+}
+
+// ─── Next ─────────────────────────────────────
+function next() { toast('🚀 트렌드 분석 화면으로 이동합니다... (Screen 2 구현 예정)'); }
+
+// ─── Sidebar toggle ───────────────────────────
+function toggleSection(el) {
+  const items = el.parentElement.querySelector('.sb-items');
+  const chev  = el.querySelector('.sb-chevron');
+  if (!items) return;
+  const open = items.style.display !== 'none';
+  items.style.display = open ? 'none' : '';
+  chev.classList.toggle('open', !open);
+}
+
+// ─── Toast ────────────────────────────────────
+let _tt;
+function toast(msg) {
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(_tt); _tt=setTimeout(()=>el.classList.remove('show'),2800);
+}
+
+// ─── Helpers ──────────────────────────────────
+function show(id){ const e=document.getElementById(id); if(e) e.classList.remove('hidden'); }
+function hide(id){ const e=document.getElementById(id); if(e) e.classList.add('hidden'); }
+</script>
+</body>
+</html>

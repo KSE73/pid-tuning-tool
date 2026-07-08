@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PID Tuning Tool — Loop 진단</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;background:#F5F6F8;color:#1A1A1A;font-size:13px}
+
+/* ── TOPBAR ── */
+.g-topbar{position:fixed;top:0;left:0;right:0;z-index:200;height:48px;background:#1C1C1E;display:flex;align-items:center;padding:0 16px}
+.g-logo{display:flex;align-items:center;gap:8px;padding-right:20px;border-right:1px solid #333;margin-right:4px;text-decoration:none}
+.g-logo-icon{width:28px;height:28px;background:#FF6B2B;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:800}
+.g-logo-name{color:#fff;font-size:14px;font-weight:700}
+.g-nav{display:flex;align-items:center;flex:1}
+.g-nav-item{height:48px;display:flex;align-items:center;padding:0 14px;color:#999;font-size:13px;font-weight:500;cursor:pointer;text-decoration:none;white-space:nowrap}
+.g-nav-item.pill{background:#FF6B2B;color:#fff;border-radius:20px;height:28px;padding:0 14px;margin:0 2px}
+.g-topbar-right{display:flex;align-items:center;gap:10px;margin-left:auto}
+.g-icon-btn{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:15px;cursor:pointer;background:none;border:none}
+.g-avatar{width:30px;height:30px;background:#444;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#ccc;font-size:11px;font-weight:600;border:1.5px solid #555;cursor:pointer}
+
+.layout{display:flex;padding-top:48px;min-height:100vh}
+.sidebar{width:168px;min-width:168px;background:#fff;border-right:1px solid #E8E8E8;position:fixed;top:48px;left:0;bottom:0;overflow-y:auto;z-index:100;padding:8px 0 60px}
+.sb-section{margin-bottom:2px}
+.sb-section-header{display:flex;align-items:center;justify-content:space-between;padding:7px 14px 5px;cursor:pointer}
+.sb-section-label{font-size:12px;font-weight:700;color:#1A1A1A;display:flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%}
+.dot-orange{background:#FF6B2B}.dot-blue{background:#3B82F6}.dot-green{background:#10B981}.dot-purple{background:#8B5CF6}
+.sb-items{padding-bottom:4px}
+.sb-item{display:flex;align-items:center;justify-content:space-between;padding:6px 14px 6px 26px;color:#555;font-size:12px;cursor:pointer;text-decoration:none;position:relative;transition:background .1s}
+.sb-item:hover{background:#F5F6F8;color:#1A1A1A}
+.sb-item.active{background:#FFF0E8;color:#FF6B2B;font-weight:600}
+.sb-item.active::before{content:'';position:absolute;left:0;top:4px;bottom:4px;width:3px;background:#FF6B2B;border-radius:0 3px 3px 0}
+.sb-count{font-size:11px;color:#999;background:#F0F0F0;padding:1px 6px;border-radius:10px;font-weight:500}
+.sb-divider{height:1px;background:#F0F0F0;margin:6px 14px}
+.sb-bottom{position:absolute;bottom:0;left:0;right:0;border-top:1px solid #F0F0F0;background:#fff;padding:8px 0}
+.sb-bottom-item{display:flex;align-items:center;gap:8px;padding:7px 14px;color:#666;font-size:12px;cursor:pointer}
+
+.main{margin-left:168px;flex:1;min-width:0;padding:20px 24px 80px}
+
+.step-bar{display:flex;align-items:center;background:#fff;border:1px solid #E8E8E8;border-radius:8px;padding:10px 18px;margin-bottom:14px;overflow-x:auto;gap:0}
+.step-item{display:flex;align-items:center;gap:7px;flex-shrink:0}
+.step-circle{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;border:2px solid #E0E0E0;color:#B0B0B0;background:#fff}
+.step-item.done .step-circle{background:#10B981;border-color:#10B981;color:#fff}
+.step-item.active .step-circle{background:#FF6B2B;border-color:#FF6B2B;color:#fff}
+.step-label{font-size:11px;font-weight:500;color:#bbb}
+.step-item.active .step-label{color:#FF6B2B;font-weight:600}
+.step-item.done .step-label{color:#10B981}
+.step-sep{width:24px;height:1px;background:#E0E0E0;margin:0 3px;flex-shrink:0}
+.step-sep.done{background:#10B981}
+
+.page-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.page-title{font-size:18px;font-weight:700;color:#1A1A1A;letter-spacing:-.3px}
+.page-tag{font-size:11px;color:#aaa;padding:2px 8px;background:#F5F6F8;border:1px solid #E8E8E8;border-radius:10px}
+
+/* ── Loop info bar ── */
+.loop-bar{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #E8E8E8;border-radius:8px;padding:10px 16px;margin-bottom:14px;flex-wrap:wrap}
+.lbl{font-size:11px;font-weight:600;color:#888;white-space:nowrap}
+.pv-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:12px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600}
+.chip-green{background:#ECFDF5;color:#059669;border:1px solid #A7F3D0}
+.chip-orange{background:#FFF0E8;color:#FF6B2B;border:1px solid #FDDCCC}
+
+/* ── top grid ── */
+.top-grid{display:grid;grid-template-columns:280px 1fr;gap:14px;margin-bottom:14px}
+
+/* ── Grade card ── */
+.grade-card{background:#fff;border:1px solid #E8E8E8;border-radius:8px;padding:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;position:relative;overflow:hidden}
+.grade-bg{position:absolute;inset:0;opacity:.04;font-size:200px;font-weight:900;display:flex;align-items:center;justify-content:center;line-height:1;pointer-events:none;user-select:none}
+.grade-circle{width:100px;height:100px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:52px;font-weight:800;margin-bottom:12px;position:relative;border:6px solid}
+.grade-label{font-size:15px;font-weight:700;margin-bottom:4px}
+.grade-sub{font-size:12px;color:#888;line-height:1.4;margin-bottom:14px}
+.grade-score-row{display:flex;align-items:center;gap:8px;width:100%}
+.grade-score-track{flex:1;height:8px;background:#F0F0F0;border-radius:4px;overflow:hidden}
+.grade-score-fill{height:100%;border-radius:4px;transition:width .8s cubic-bezier(.34,1.2,.64,1)}
+.grade-score-val{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;min-width:40px;text-align:right}
+
+/* grade colors */
+.grade-A .grade-circle{border-color:#10B981;color:#10B981;background:#ECFDF5}
+.grade-A .grade-bg{color:#10B981}
+.grade-A .grade-label{color:#059669}
+.grade-A .grade-score-fill{background:linear-gradient(90deg,#10B981,#059669)}
+.grade-A .grade-score-val{color:#059669}
+
+.grade-B .grade-circle{border-color:#3B82F6;color:#3B82F6;background:#EFF6FF}
+.grade-B .grade-bg{color:#3B82F6}
+.grade-B .grade-label{color:#2563EB}
+.grade-B .grade-score-fill{background:linear-gradient(90deg,#60A5FA,#3B82F6)}
+.grade-B .grade-score-val{color:#2563EB}
+
+.grade-C .grade-circle{border-color:#F59E0B;color:#D97706;background:#FFFBEB}
+.grade-C .grade-bg{color:#F59E0B}
+.grade-C .grade-label{color:#D97706}
+.grade-C .grade-score-fill{background:linear-gradient(90deg,#FCD34D,#F59E0B)}
+.grade-C .grade-score-val{color:#D97706}
+
+.grade-D .grade-circle{border-color:#EF4444;color:#EF4444;background:#FEF2F2}
+.grade-D .grade-bg{color:#EF4444}
+.grade-D .grade-label{color:#DC2626}
+.grade-D .grade-score-fill{background:linear-gradient(90deg,#FCA5A5,#EF4444)}
+.grade-D .grade-score-val{color:#DC2626}
+
+/* ── radar chart card ── */
+.radar-card{background:#fff;border:1px solid #E8E8E8;border-radius:8px;padding:16px}
+.radar-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.radar-title{font-size:13px;font-weight:700;color:#1A1A1A;display:flex;align-items:center;gap:7px}
+.radar-wrap{position:relative;height:220px}
+
+/* ── Diagnostic items ── */
+.diag-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.diag-item{background:#fff;border:1px solid #E8E8E8;border-radius:8px;padding:14px 16px;cursor:pointer;transition:box-shadow .15s}
+.diag-item:hover{box-shadow:0 2px 12px rgba(0,0,0,.08)}
+.diag-item.expanded{border-color:#FF6B2B}
+.diag-head{display:flex;align-items:center;gap:10px}
+.diag-status-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.dot-ok{background:#10B981}
+.dot-warn{background:#F59E0B}
+.dot-err{background:#EF4444}
+.dot-info{background:#3B82F6}
+.diag-title-wrap{flex:1;min-width:0}
+.diag-title{font-size:13px;font-weight:600;color:#1A1A1A;margin-bottom:1px}
+.diag-method{font-size:10px;color:#aaa}
+.diag-score-badge{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;padding:2px 9px;border-radius:10px;flex-shrink:0}
+.badge-ok{background:#ECFDF5;color:#059669;border:1px solid #A7F3D0}
+.badge-warn{background:#FFFBEB;color:#D97706;border:1px solid #FDE68A}
+.badge-err{background:#FEF2F2;color:#DC2626;border:1px solid #FECACA}
+.badge-info{background:#EFF6FF;color:#2563EB;border:1px solid #BFDBFE}
+.diag-bar-wrap{display:flex;align-items:center;gap:8px;margin-top:8px}
+.diag-bar-track{flex:1;height:5px;background:#F0F0F0;border-radius:3px;overflow:hidden}
+.diag-bar-fill{height:100%;border-radius:3px;transition:width .6s cubic-bezier(.34,1.2,.64,1)}
+.diag-detail{margin-top:10px;padding-top:10px;border-top:1px solid #F5F5F5;display:none}
+.diag-item.expanded .diag-detail{display:block}
+.diag-detail-text{font-size:12px;color:#555;line-height:1.6;margin-bottom:8px}
+.diag-action{display:flex;align-items:flex-start;gap:7px;padding:8px 10px;border-radius:6px;font-size:11px;line-height:1.5}
+.action-ok{background:#F0FAF6;border:1px solid #C8EEE0;color:#065F46}
+.action-warn{background:#FFFBEB;border:1px solid #FDE68A;color:#78350F}
+.action-err{background:#FEF2F2;border:1px solid #FECACA;color:#7F1D1D}
+.action-icon{font-size:14px;flex-shrink:0}
+.chevron-icon{color:#aaa;font-size:10px;transition:transform .2s;flex-shrink:0}
+.diag-item.expanded .chevron-icon{transform:rotate(180deg)}
+
+/* ── action summary card ── */
+.action-card{background:#fff;border:1px solid #E8E8E8;border-radius:8px;margin-bottom:14px}
+.action-card-head{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid #F0F0F0}
+.action-card-title{font-size:13px;font-weight:700;color:#1A1A1A;display:flex;align-items:center;gap:7px}
+.action-card-icon{width:24px;height:24px;background:#FFF0E8;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:13px}
+.action-list{padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.action-row{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:7px;border:1px solid}
+.action-row.priority-high{border-color:#FECACA;background:#FEF2F2}
+.action-row.priority-mid{border-color:#FDE68A;background:#FFFBEB}
+.action-row.priority-low{border-color:#C8EEE0;background:#F0FAF6}
+.action-row.priority-info{border-color:#BFDBFE;background:#EFF6FF}
+.action-priority{font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px;white-space:nowrap;flex-shrink:0;margin-top:2px}
+.pri-high{background:#DC2626;color:#fff}
+.pri-mid{background:#D97706;color:#fff}
+.pri-low{background:#059669;color:#fff}
+.pri-info{background:#2563EB;color:#fff}
+.action-text{font-size:12px;color:#444;line-height:1.5;flex:1}
+.action-text strong{color:#1A1A1A}
+
+/* ── summary comparison ── */
+.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.sum-card{background:#fff;border:1px solid #E8E8E8;border-radius:8px;padding:14px 16px}
+.sum-label{font-size:10px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.sum-val{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:600;line-height:1}
+.sum-sub{font-size:11px;color:#aaa;margin-top:3px}
+.sum-card.red .sum-val{color:#DC2626}
+.sum-card.orange .sum-val{color:#D97706}
+.sum-card.green .sum-val{color:#059669}
+.sum-card.blue .sum-val{color:#2563EB}
+
+/* ── buttons ── */
+.btn{display:inline-flex;align-items:center;gap:5px;font-family:inherit;font-weight:600;border:none;cursor:pointer;transition:all .15s;border-radius:5px;font-size:12px;line-height:1}
+.btn-orange{background:#FF6B2B;color:#fff;padding:8px 16px}
+.btn-orange:hover{background:#E85A1A}
+.btn-outline{background:#fff;color:#555;border:1px solid #D4D4D4;padding:7px 14px}
+.btn-outline:hover{background:#F5F6F8}
+.btn-sm{padding:5px 10px;font-size:11px}
+.btn-green{background:#059669;color:#fff;padding:8px 16px}
+.btn-green:hover{background:#047857}
+
+.action-bar{position:fixed;bottom:0;left:168px;right:0;background:#fff;border-top:1px solid #E8E8E8;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;z-index:50}
+.action-bar-left{font-size:12px;color:#666}
+.action-bar-left strong{color:#1A1A1A;font-weight:600}
+.action-bar-right{display:flex;gap:8px}
+
+/* ── complete banner ── */
+.complete-banner{background:linear-gradient(135deg,#1C1C1E 0%,#2D3748 100%);border-radius:10px;padding:20px 24px;display:flex;align-items:center;gap:18px;margin-bottom:14px;position:relative;overflow:hidden}
+.complete-banner::before{content:'✓';position:absolute;right:24px;top:50%;transform:translateY(-50%);font-size:80px;font-weight:900;color:rgba(16,185,129,.12);line-height:1}
+.complete-icon{width:48px;height:48px;background:rgba(16,185,129,.2);border:2px solid #10B981;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.complete-text{flex:1}
+.complete-title{font-size:16px;font-weight:700;color:#fff;margin-bottom:4px}
+.complete-sub{font-size:12px;color:#94A3B8;line-height:1.5}
+.complete-actions{display:flex;gap:8px;flex-shrink:0}
+
+.toast{position:fixed;bottom:72px;right:24px;background:#1A1A1A;color:#fff;font-size:12px;font-weight:500;padding:10px 16px;border-radius:6px;border-left:3px solid #FF6B2B;box-shadow:0 4px 20px rgba(0,0,0,.2);transform:translateY(60px);opacity:0;transition:all .25s cubic-bezier(.34,1.56,.64,1);z-index:999;pointer-events:none}
+.toast.show{transform:translateY(0);opacity:1}
+
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.animate-in{animation:fadeIn .4s ease both}
+</style>
+</head>
+<body>
+
+<header class="g-topbar">
+  <a class="g-logo"><div class="g-logo-icon">P</div><span class="g-logo-name">PID Tuning Tool</span></a>
+  <nav class="g-nav">
+    <a class="g-nav-item">데이터 관리</a>
+    <a class="g-nav-item pill">Tuning 작업</a>
+    <a class="g-nav-item">Loop 진단</a>
+    <a class="g-nav-item">보고서</a>
+    <a class="g-nav-item">설정</a>
+  </nav>
+  <div class="g-topbar-right">
+    <button class="g-icon-btn">🔔</button>
+    <button class="g-icon-btn">❓</button>
+    <div class="g-avatar">ENG</div>
+  </div>
+</header>
+
+<div class="layout">
+<aside class="sidebar">
+  <div class="sb-section">
+    <div class="sb-section-header"><div class="sb-section-label"><span class="dot dot-orange"></span>작업함</div></div>
+    <div class="sb-items">
+      <a class="sb-item active">현재 작업</a>
+      <a class="sb-item">진행중 <span class="sb-count">2</span></a>
+      <a class="sb-item">임시저장 <span class="sb-count">5</span></a>
+    </div>
+  </div>
+  <div class="sb-divider"></div>
+  <div class="sb-section">
+    <div class="sb-section-header"><div class="sb-section-label"><span class="dot dot-blue"></span>Tuning 이력</div></div>
+    <div class="sb-items">
+      <a class="sb-item">완료 <span class="sb-count">24</span></a>
+      <a class="sb-item">검토대기 <span class="sb-count">3</span></a>
+    </div>
+  </div>
+  <div class="sb-divider"></div>
+  <div class="sb-section">
+    <div class="sb-section-header"><div class="sb-section-label"><span class="dot dot-green"></span>Loop 목록</div></div>
+    <div class="sb-items">
+      <a class="sb-item">Temperature <span class="sb-count">12</span></a>
+      <a class="sb-item">Pressure <span class="sb-count">8</span></a>
+      <a class="sb-item">Flow <span class="sb-count">15</span></a>
+    </div>
+  </div>
+  <div class="sb-divider"></div>
+  <div class="sb-section">
+    <div class="sb-section-header"><div class="sb-section-label"><span class="dot dot-purple"></span>진단함</div></div>
+    <div class="sb-items">
+      <a class="sb-item active">Plant Triage <span class="sb-count">41</span></a>
+      <a class="sb-item">불량 Loop <span class="sb-count" style="background:#FEE2E2;color:#DC2626">7</span></a>
+    </div>
+  </div>
+  <div class="sb-bottom">
+    <div class="sb-bottom-item">⭐ 즐겨찾기</div>
+    <div class="sb-bottom-item">⚙ 설정</div>
+  </div>
+</aside>
+
+<main class="main">
+
+  <div class="step-bar">
+    <div class="step-item done"><div class="step-circle">✓</div><span class="step-label">데이터 수집</span></div>
+    <div class="step-sep done"></div>
+    <div class="step-item done"><div class="step-circle">✓</div><span class="step-label">트렌드 분석</span></div>
+    <div class="step-sep done"></div>
+    <div class="step-item done"><div class="step-circle">✓</div><span class="step-label">모델 식별·PID 추천</span></div>
+    <div class="step-sep done"></div>
+    <div class="step-item done"><div class="step-circle">✓</div><span class="step-label">시뮬레이션</span></div>
+    <div class="step-sep done"></div>
+    <div class="step-item active"><div class="step-circle">5</div><span class="step-label">Loop 진단</span></div>
+  </div>
+
+  <div class="page-title-row">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="page-title">Loop 진단</div>
+      <span class="page-tag">Plant Triage · Step 5 / 5</span>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-outline btn-sm" onclick="showToast('🔄 진단 재실행 중...')">🔄 재진단</button>
+      <button class="btn btn-outline btn-sm" onclick="exportPDF()">📄 진단 보고서 PDF</button>
+      <button class="btn btn-green btn-sm" onclick="showToast('✅ Tuning 작업 완료 처리됨')">✅ 작업 완료</button>
+    </div>
+  </div>
+
+  <!-- Loop bar -->
+  <div class="loop-bar">
+    <span class="lbl">Loop</span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600">TIC-101</span>
+    <div style="width:1px;height:20px;background:#E8E8E8"></div>
+    <span class="lbl">DCS</span>
+    <span style="font-size:12px;color:#555">Honeywell Experion PKS</span>
+    <div style="width:1px;height:20px;background:#E8E8E8"></div>
+    <span class="lbl">분석 기간</span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#555">08:00 ~ 11:00 (180 min)</span>
+    <div style="width:1px;height:20px;background:#E8E8E8"></div>
+    <span class="pv-chip chip-orange">Tuning 완료 · IMC λ=6.42</span>
+    <div style="margin-left:auto">
+      <span style="font-size:11px;color:#aaa">진단 시각: 2024-03-15 11:32</span>
+    </div>
+  </div>
+
+  <!-- Summary stat cards -->
+  <div class="summary-grid animate-in">
+    <div class="sum-card orange">
+      <div class="sum-label">AUTO 모드 비율</div>
+      <div class="sum-val">82<span style="font-size:14px">%</span></div>
+      <div class="sum-sub">권장 ≥ 80% · 충족</div>
+    </div>
+    <div class="sum-card red">
+      <div class="sum-label">최대 Overshoot</div>
+      <div class="sum-val">18<span style="font-size:14px">%</span></div>
+      <div class="sum-sub">기준 ≤ 20% · 경계</div>
+    </div>
+    <div class="sum-card green">
+      <div class="sum-label">Valve 포화 빈도</div>
+      <div class="sum-val">1.2<span style="font-size:14px">%</span></div>
+      <div class="sum-sub">기준 ≤ 5% · 양호</div>
+    </div>
+    <div class="sum-card blue">
+      <div class="sum-label">진단 항목 통과</div>
+      <div class="sum-val">5<span style="font-size:14px">/7</span></div>
+      <div class="sum-sub">2개 항목 주의 필요</div>
+    </div>
+  </div>
+
+  <!-- Grade + Radar -->
+  <div class="top-grid animate-in">
+
+    <!-- Grade card -->
+    <div class="grade-card grade-C" id="grade-card">
+      <div class="grade-bg" id="grade-bg">C</div>
+      <div class="grade-circle" id="grade-circle">C</div>
+      <div class="grade-label" id="grade-label">Tune Required</div>
+      <div class="grade-sub" id="grade-sub">Tuning 파라미터 개선이 필요합니다.<br>추천 PID 파라미터 적용 후 재진단을 권장합니다.</div>
+      <div class="grade-score-row">
+        <span style="font-size:11px;color:#888;min-width:48px">종합 점수</span>
+        <div class="grade-score-track"><div class="grade-score-fill" id="grade-fill" style="width:62%"></div></div>
+        <span class="grade-score-val" id="grade-score">62</span>
+      </div>
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+        <span style="font-size:10px;font-weight:600;padding:2px 8px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;color:#D97706">🟡 Oscillation 의심</span>
+        <span style="font-size:10px;font-weight:600;padding:2px 8px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;color:#D97706">🟡 Overshoot 경계</span>
+      </div>
+    </div>
+
+    <!-- Radar chart -->
+    <div class="radar-card">
+      <div class="radar-head">
+        <div class="radar-title">
+          <span style="width:22px;height:22px;background:#FFF0E8;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px">🕸</span>
+          진단 항목별 점수
+        </div>
+        <div style="display:flex;gap:12px">
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#555">
+            <div style="width:10px;height:10px;border-radius:50%;background:rgba(255,107,43,.4);border:2px solid #FF6B2B"></div>현재 (Tuning 전)
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#555">
+            <div style="width:10px;height:10px;border-radius:50%;background:rgba(16,185,129,.4);border:2px solid #10B981"></div>추천 후 (예측)
+          </div>
+        </div>
+      </div>
+      <div class="radar-wrap"><canvas id="radar-chart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- 7 Diagnostic items -->
+  <div style="font-size:12px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">진단 항목 상세 — 클릭하여 내용 펼치기</div>
+  <div class="diag-grid" id="diag-grid"><!-- populated by JS --></div>
+
+  <!-- Recommended actions -->
+  <div class="action-card animate-in">
+    <div class="action-card-head">
+      <div class="action-card-title">
+        <div class="action-card-icon">📋</div>
+        권장 조치 사항
+      </div>
+      <span style="font-size:11px;color:#aaa">우선순위 순</span>
+    </div>
+    <div class="action-list" id="action-list"><!-- populated by JS --></div>
+  </div>
+
+  <!-- Completion banner -->
+  <div class="complete-banner animate-in">
+    <div class="complete-icon">🎯</div>
+    <div class="complete-text">
+      <div class="complete-title">TIC-101 Tuning 분석 완료</div>
+      <div class="complete-sub">FOPDT 모델 식별 (R²=0.943) · IMC Tuning (λ=6.42 min) · Loop 진단 등급 C → B 개선 예측<br>추천 파라미터: GAIN=1.823 · RSET=3.735 min/rep · RATE=0.447 min</div>
+    </div>
+    <div class="complete-actions">
+      <button class="btn btn-outline btn-sm" onclick="exportPDF()">📄 보고서 저장</button>
+      <button class="btn btn-orange btn-sm" onclick="showToast('✅ 파라미터 적용 완료 처리됨 · 담당자에게 알림 발송')">DCS 적용 확인 →</button>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<div class="action-bar">
+  <div class="action-bar-left">
+    <strong>TIC-101 진단 완료</strong> &nbsp;—&nbsp; 등급 C · 2개 주의 항목 · 추천 PID 적용 후 등급 B 예측
+  </div>
+  <div class="action-bar-right">
+    <button class="btn btn-outline" onclick="showToast('← 시뮬레이션으로 이동')">← 이전</button>
+    <button class="btn btn-outline" onclick="exportPDF()">📄 PDF 보고서</button>
+    <button class="btn btn-green" onclick="showToast('✅ 작업 완료 · 이력에 저장됨')">✅ 완료 처리</button>
+  </div>
+</div>
+
+<div class="toast" id="toast-el"></div>
+
+<script>
+// ══════════════════════════════════════════
+// DIAGNOSTIC DATA
+// ══════════════════════════════════════════
+const DIAG_ITEMS = [
+  {
+    id:'mode',
+    title:'운전 모드 비율 (AUTO Rate)',
+    method:'전체 시간 대비 AUTO 모드 체류 시간 분석',
+    status:'ok',
+    score:82,
+    max:100,
+    threshold:'권장 ≥ 80%',
+    measured:'AUTO 82% / MANUAL 18%',
+    detail:'분석 구간 180분 중 AUTO 모드 체류 시간은 148분(82%)입니다. 초기 8분간 MANUAL 운전 후 AUTO 전환이 확인됩니다. 80% 기준을 충족하나 MANUAL 전환 빈도를 모니터링하세요.',
+    actionType:'ok',
+    action:'현재 AUTO 모드 비율은 양호합니다. MANUAL 전환 원인을 기록·추적하여 개선 추세를 관리하세요.'
+  },
+  {
+    id:'oscillation',
+    title:'진동 감지 (Oscillation)',
+    method:'PV 자기상관함수(ACF) 분석 · Zero-crossing 주기 검출',
+    status:'warn',
+    score:55,
+    max:100,
+    threshold:'ACF 0-crossing < 2×Dead Time → 진동 의심',
+    measured:'ACF 0-crossing 주기: 2.1 min (Dead Time: 1.05 min)',
+    detail:'PV의 ACF 분석 결과 진동 성분이 약하게 감지됩니다. 현재 Gain이 다소 높아 주기적 편차가 발생할 수 있습니다. Ziegler-Nichols 방법 적용 시 진동이 증가할 수 있으므로 IMC 방법을 유지하고 λ를 소폭 증가시키면 개선됩니다.',
+    actionType:'warn',
+    action:'⚠ IMC λ 값을 현재 6.42min에서 7~8min으로 증가시켜 진동 억제를 권장합니다. 추천 PID 파라미터 적용 후 재진단하세요.'
+  },
+  {
+    id:'stiction',
+    title:'밸브 Stiction 감지',
+    method:'PV-MV 리사쥬 곡선 분석 · MV 불감대(Deadband) 검출',
+    status:'ok',
+    score:88,
+    max:100,
+    threshold:'타원형 리사쥬 루프 감지 시 Stiction 의심',
+    measured:'리사쥬 원형 지수: 0.12 (기준 < 0.3)',
+    detail:'PV-MV 리사쥬 곡선이 타원 형태를 보이지 않으며, MV 불감대도 검출되지 않았습니다. 제어 밸브의 정적 마찰(Stiction) 문제는 현재 없는 것으로 판단됩니다.',
+    actionType:'ok',
+    action:'밸브 Stiction 문제 없음. 정기 밸브 점검 일정(6개월 주기)을 유지하세요.'
+  },
+  {
+    id:'overshoot',
+    title:'Overshoot 비율',
+    method:'SV 변경 이벤트 후 최대 PV 편차 분석',
+    status:'warn',
+    score:60,
+    max:100,
+    threshold:'기준 ≤ 20%',
+    measured:'최대 Overshoot: 18.3% (SV +10°C 스텝)',
+    detail:'SV +10°C 변경 시 최대 PV가 SV를 18.3% 초과합니다. 20% 기준에 근접하여 주의가 필요합니다. 비례이득(GAIN)이 다소 높거나 미분(RATE)이 부족한 것이 원인으로 추정됩니다. 추천 PID 적용 시 Overshoot 8% 이하로 개선 예측.',
+    actionType:'warn',
+    action:'⚠ 추천 PID 파라미터(GAIN=1.823, RATE=0.447) 적용 시 Overshoot이 약 8%로 개선될 것으로 시뮬레이션 결과 확인됨. 우선 적용 검토 권장.'
+  },
+  {
+    id:'iae',
+    title:'SV 추종성 (IAE)',
+    method:'|PV-SV| 누적 절대 오차 정규화',
+    status:'ok',
+    score:72,
+    max:100,
+    threshold:'상위 20% 초과 → 개선 필요',
+    measured:'정규화 IAE: 0.68 (상위 32% 수준)',
+    detail:'현재 Tuning의 IAE는 동종 루프 대비 상위 32% 수준입니다. 추천 PID 적용 시 IAE 약 35% 개선이 예측됩니다. SV 추종 성능은 보통 수준이나 개선 여지가 있습니다.',
+    actionType:'ok',
+    action:'추천 PID 파라미터 적용 후 IAE 개선 효과를 재측정하세요.'
+  },
+  {
+    id:'saturation',
+    title:'Valve 포화 빈도',
+    method:'MV = 0% 또는 100% 체류 시간 비율',
+    status:'ok',
+    score:95,
+    max:100,
+    threshold:'기준 ≤ 5%',
+    measured:'포화 비율: 1.2% (2.2 min / 180 min)',
+    detail:'밸브 포화(Saturation) 발생이 매우 낮은 수준(1.2%)입니다. 운전 범위 내 제어 여유가 충분합니다.',
+    actionType:'ok',
+    action:'밸브 포화 문제 없음. 현재 운전 범위를 유지하세요.'
+  },
+  {
+    id:'nonlinearity',
+    title:'공정 이득 비선형성',
+    method:'저부하/고부하 구간별 FOPDT Gain 비교 분석',
+    status:'ok',
+    score:78,
+    max:100,
+    threshold:'Gain 변화 > 50% → Gain Scheduling 권장',
+    measured:'저부하 Kp=0.79 / 고부하 Kp=0.87 (변화율 10.1%)',
+    detail:'운전 범위 내 공정 이득 변화가 10.1%로 선형성이 양호합니다. 단일 PID로 전 운전 범위를 커버할 수 있습니다. Gain Scheduling은 불필요합니다.',
+    actionType:'ok',
+    action:'공정 비선형성 문제 없음. 단일 PID 파라미터로 운전 범위 커버 가능.'
+  },
+];
+
+const ACTIONS = [
+  {priority:'high', cls:'priority-high', priCls:'pri-high', icon:'🔴',
+   text:'<strong>[즉시 권장]</strong> 추천 PID 파라미터 (GAIN=1.823, RSET=3.735, RATE=0.447) 적용 — 현재 Overshoot 18.3%를 약 8%로 개선하고 진동 성분을 억제합니다.'},
+  {priority:'mid', cls:'priority-mid', priCls:'pri-mid', icon:'🟡',
+   text:'<strong>[단기 조치]</strong> 파라미터 적용 후 1주일 내 재진단 실시 — 실제 공정 응답이 시뮬레이션과 일치하는지 확인하고 필요 시 λ를 미세 조정하세요.'},
+  {priority:'low', cls:'priority-low', priCls:'pri-low', icon:'🟢',
+   text:'<strong>[정기 점검]</strong> 제어 밸브 6개월 주기 점검 유지 — 현재 Stiction 없음이나 마모 누적에 대비한 예방 정비를 권장합니다.'},
+  {priority:'info', cls:'priority-info', priCls:'pri-info', icon:'🔵',
+   text:'<strong>[모니터링]</strong> AUTO 모드 전환 이력 기록 관리 — MANUAL 전환 사유를 DCS 이벤트 로그에 남기고 월간 통계를 추적하세요.'},
+];
+
+// ══════════════════════════════════════════
+// RADAR CHART
+// ══════════════════════════════════════════
+function buildRadar() {
+  const labels = DIAG_ITEMS.map(d=>d.title.split(' ')[0]);
+  const currentScores = DIAG_ITEMS.map(d=>d.score);
+  // Predicted after recommended PID
+  const predictedScores = [82, 78, 88, 88, 85, 95, 78];
+
+  const ctx = document.getElementById('radar-chart').getContext('2d');
+  new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: '현재',
+          data: currentScores,
+          borderColor: '#FF6B2B',
+          backgroundColor: 'rgba(255,107,43,.15)',
+          borderWidth: 2,
+          pointBackgroundColor: '#FF6B2B',
+          pointRadius: 3,
+        },
+        {
+          label: '추천 후 (예측)',
+          data: predictedScores,
+          borderColor: '#10B981',
+          backgroundColor: 'rgba(16,185,129,.1)',
+          borderWidth: 2,
+          borderDash: [4,3],
+          pointBackgroundColor: '#10B981',
+          pointRadius: 3,
+        }
+      ]
+    },
+    options: {
+      animation: { duration: 800 },
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        r: {
+          min: 0, max: 100,
+          ticks: { display: false, stepSize: 25 },
+          grid: { color: '#F0F0F0' },
+          angleLines: { color: '#E8E8E8' },
+          pointLabels: {
+            font: { family: "'Pretendard', sans-serif", size: 10 },
+            color: '#666'
+          }
+        }
+      }
+    }
+  });
+}
+
+// ══════════════════════════════════════════
+// RENDER DIAGNOSTIC ITEMS
+// ══════════════════════════════════════════
+function renderDiagItems() {
+  const grid = document.getElementById('diag-grid');
+  const statusMap = { ok:'dot-ok', warn:'dot-warn', err:'dot-err', info:'dot-info' };
+  const badgeMap  = { ok:'badge-ok', warn:'badge-warn', err:'badge-err', info:'badge-info' };
+  const barColors = { ok:'#10B981', warn:'#F59E0B', err:'#EF4444', info:'#3B82F6' };
+  const actionMap = { ok:'action-ok', warn:'action-warn', err:'action-err', info:'action-ok' };
+  const actionIcons = { ok:'✅', warn:'⚠️', err:'🔴', info:'ℹ️' };
+
+  grid.innerHTML = DIAG_ITEMS.map(d => `
+    <div class="diag-item animate-in" id="di-${d.id}" onclick="toggleDiag('${d.id}')">
+      <div class="diag-head">
+        <div class="diag-status-dot ${statusMap[d.status]}"></div>
+        <div class="diag-title-wrap">
+          <div class="diag-title">${d.title}</div>
+          <div class="diag-method">${d.method}</div>
+        </div>
+        <span class="diag-score-badge ${badgeMap[d.status]}">${d.score}</span>
+        <span class="chevron-icon">▾</span>
+      </div>
+      <div class="diag-bar-wrap">
+        <div class="diag-bar-track">
+          <div class="diag-bar-fill" style="width:${d.score}%;background:${barColors[d.status]}"></div>
+        </div>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#aaa;min-width:32px;text-align:right">${d.score}/100</span>
+      </div>
+      <div class="diag-detail">
+        <div class="diag-detail-text">
+          <span style="font-size:10px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.05em">측정값</span><br>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#1A1A1A">${d.measured}</span>
+          <span style="font-size:10px;color:#aaa;margin-left:8px">${d.threshold}</span>
+          <br><br>${d.detail}
+        </div>
+        <div class="diag-action ${actionMap[d.status]}">
+          <span class="action-icon">${actionIcons[d.status]}</span>
+          <span>${d.action}</span>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function toggleDiag(id) {
+  const el = document.getElementById('di-'+id);
+  el.classList.toggle('expanded');
+}
+
+// ══════════════════════════════════════════
+// RENDER ACTION LIST
+// ══════════════════════════════════════════
+function renderActions() {
+  document.getElementById('action-list').innerHTML = ACTIONS.map(a => `
+    <div class="action-row ${a.cls}">
+      <span style="font-size:14px">${a.icon}</span>
+      <span class="action-priority ${a.priCls}">${a.priority.toUpperCase()}</span>
+      <span class="action-text">${a.text}</span>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════
+// GRADE ANIMATION
+// ══════════════════════════════════════════
+function animateGrade() {
+  const fill = document.getElementById('grade-fill');
+  setTimeout(() => { fill.style.width = '62%'; }, 300);
+}
+
+function exportPDF() {
+  showToast('📄 진단 보고서 PDF 생성 중... (TIC-101_Loop_Diagnosis_Report.pdf)');
+}
+
+// ── Init ──────────────────────────────────
+window.addEventListener('load', () => {
+  buildRadar();
+  renderDiagItems();
+  renderActions();
+  animateGrade();
+});
+
+let _tt;
+function showToast(msg) {
+  const el = document.getElementById('toast-el');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(_tt); _tt = setTimeout(() => el.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>

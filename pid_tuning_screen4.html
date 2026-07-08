@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PID Tuning Tool — 시뮬레이션</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;background:#F5F6F8;color:#1A1A1A;font-size:13px}
+
+.g-topbar{position:fixed;top:0;left:0;right:0;z-index:200;height:48px;background:#1C1C1E;display:flex;align-items:center;padding:0 16px}
+.g-logo{display:flex;align-items:center;gap:8px;padding-right:20px;border-right:1px solid #333;margin-right:4px;text-decoration:none}
+.g-logo-icon{width:28px;height:28px;background:#FF6B2B;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:800}
+.g-logo-name{color:#fff;font-size:14px;font-weight:700}
+.g-nav{display:flex;align-items:center;flex:1}
+.g-nav-item{height:48px;display:flex;align-items:center;padding:0 14px;color:#999;font-size:13px;font-weight:500;cursor:pointer;text-decoration:none;white-space:nowrap}
+.g-nav-item.pill{background:#FF6B2B;color:#fff;border-radius:20px;height:28px;padding:0 14px;margin:0 2px}
+.g-topbar-right{display:flex;align-items:center;gap:10px;margin-left:auto}
+.g-icon-btn{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:15px;cursor:pointer;background:none;border:none}
+.g-avatar{width:30px;height:30px;background:#444;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#ccc;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid #555}
+
+.layout{display:flex;padding-top:48px;min-height:100vh}
+.sidebar{width:168px;min-width:168px;background:#fff;border-right:1px solid #E8E8E8;position:fixed;top:48px;left:0;bottom:0;overflow-y:auto;z-index:100;padding:8px 0 60px}
+.sb-section{margin-bottom:2px}
+.sb-section-header{display:flex;align-items:center;justify-content:space-between;padding:7px 14px 5px;cursor:pointer}
+.sb-section-label{font-size:12px;font-weight:700;color:#1A1A1A;display:flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%}
+.dot-orange{background:#FF6B2B}.dot-blue{background:#3B82F6}.dot-green{background:#10B981}.dot-purple{background:#8B5CF6}
+.sb-items{padding-bottom:4px}
+.sb-item{display:flex;align-items:center;justify-content:space-between;padding:6px 14px 6px 26px;color:#555;font-size:12px;cursor:pointer;text-decoration:none;position:relative;transition:background .1s}
+.sb-item:hover{background:#F5F6F8;color:#1A1A1A}
+.sb-item.active{background:#FFF0E8;color:#FF6B2B;font-weight:600}
+.sb-item.active::before{content:'';position:absolute;left:0;top:4px;bottom:4px;width:3px;background:#FF6B2B;border-radius:0 3px 3px 0}
+.sb-count{font-size:11px;color:#999;background:#F0F0F0;padding:1px 6px;border-radius:10px;font-weight:500}
+.sb-divider{height:1px;background:#F0F0F0;margin:6px 14px}
+.sb-bottom{position:absolute;bottom:0;left:0;right:0;border-top:1px solid #F0F0F0;background:#fff;padding:8px 0}
+.sb-bottom-item{display:flex;align-items:center;gap:8px;padding:7px 14px;color:#666;font-size:12px;cursor:pointer}
+
+.main{margin-left:168px;flex:1;min-width:0;padding:20px 24px 80px}
+
+.step-bar{display:flex;align-items:center;background:#fff;border:1px solid #E8E8E8;border-radius:8px;padding:10px 18px;margin-bottom:14px;overflow-x:auto;gap:0}
+.step-item{display:flex;align-items:center;gap:7px;flex-shrink:0}
+.step-circle{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;border:2px solid #E0E0E0;color:#B0B0B0;background:#fff}
+.step-item.done .step-circle{background:#10B981;border-color:#10B981;color:#fff}
+.step-item.active .step-circle{background:#FF6B2B;border-color:#FF6B2B;color:#fff}
+.step-label{font-size:11px;font-weight:500;color:#bbb}
+.step-item.active .step-label{color:#FF6B2B;font-weight:600}
+.step-item.done .step-label{color:#10B981}
+.step-sep{width:24px;height:1px;background:#E0E0E0;margin:0 3px;flex-shrink:0}
+.step-sep.done{background:#10B981}
+
+.page-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.page-title{font-size:18px;font-weight:700;color:#1A1A1A;letter-spacing:-.3px}
+.page-tag{font-size:11px;color:#aaa;padding:2px 8px;background:#F5F6F8;border:1px solid #E8E8E8;border-radius:10px}
+
+.loop-bar{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #E8E8E8;border-radius:8px;padding:10px 16px;margin-bottom:14px;flex-wrap:wrap}
+.lbl{font-size:11px;font-weight:600;color:#888;white-space:nowrap}
+.pv-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:12px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600}
+.chip-pid-cur{background:#F5F3FF;color:#7C3AED;border:1px solid #DDD6FE}
+.chip-pid-new{background:#FFF0E8;color:#FF6B2B;border:1px solid #FDDCCC}
+
+/* ── main grid ── */
+.main-grid{display:grid;grid-template-columns:1fr 340px;gap:14px;align-items:start}
+
+/* ── chart card ── */
+.card{background:#fff;border:1px solid #E8E8E8;border-radius:8px}
+.card-head{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid #F0F0F0}
+.card-head-left{display:flex;align-items:center;gap:8px}
+.card-head-icon{width:24px;height:24px;background:#FFF0E8;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:13px}
+.card-head-title{font-size:13px;font-weight:700;color:#1A1A1A}
+.card-head-sub{font-size:11px;color:#aaa;margin-left:4px}
+.card-body{padding:16px}
+
+/* ── scenario bar ── */
+.scenario-row{display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid #F0F0F0;flex-wrap:wrap}
+.scenario-label{font-size:11px;font-weight:600;color:#888;white-space:nowrap}
+.scen-btn{padding:5px 12px;border:1.5px solid #E0E0E0;border-radius:5px;font-size:11px;font-weight:600;color:#555;background:#fff;cursor:pointer;transition:all .15s}
+.scen-btn:hover{border-color:#FF6B2B;color:#FF6B2B}
+.scen-btn.active{border-color:#FF6B2B;background:#FFF0E8;color:#FF6B2B}
+.sv-step-input{font-family:'JetBrains Mono',monospace;font-size:12px;border:1px solid #E0E0E0;border-radius:5px;padding:4px 8px;width:70px;outline:none}
+.sv-step-input:focus{border-color:#FF6B2B}
+
+/* ── chart area ── */
+.sim-chart-wrap{position:relative;height:260px;margin-bottom:4px}
+.sim-chart-wrap2{position:relative;height:120px}
+.chart-legend{display:flex;gap:16px;justify-content:center;padding:8px 0;border-top:1px solid #F5F5F5}
+.leg-item{display:flex;align-items:center;gap:6px;font-size:11px;color:#555}
+.leg-line{width:20px;height:2px;border-radius:2px;flex-shrink:0}
+.leg-dashed{border-top:2px dashed currentColor;height:0;width:20px;flex-shrink:0}
+
+/* ── KPI cards ── */
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.kpi-item{border:1px solid #E8E8E8;border-radius:7px;padding:11px 13px;background:#FAFAFA;position:relative}
+.kpi-label{font-size:10px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.kpi-row{display:flex;align-items:baseline;gap:6px}
+.kpi-new{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:600;color:#FF6B2B}
+.kpi-old{font-family:'JetBrains Mono',monospace;font-size:12px;color:#94A3B8;text-decoration:line-through}
+.kpi-unit{font-size:10px;color:#aaa}
+.kpi-delta{font-size:10px;font-weight:700;margin-top:3px}
+.delta-good{color:#059669}.delta-bad{color:#DC2626}
+.kpi-item.improved{border-color:#C8EEE0;background:#F0FAF6}
+.kpi-item.improved .kpi-new{color:#059669}
+.kpi-item.worsened{border-color:#FECACA;background:#FEF2F2}
+.kpi-item.worsened .kpi-new{color:#DC2626}
+
+/* ── Sliders panel ── */
+.slider-section{margin-bottom:12px}
+.slider-section-title{font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.slider-row{margin-bottom:10px}
+.slider-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.slider-name{font-size:12px;font-weight:600;color:#444}
+.slider-vals{display:flex;align-items:center;gap:6px}
+.slider-val-new{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;color:#FF6B2B}
+.slider-val-rec{font-family:'JetBrains Mono',monospace;font-size:10px;color:#94A3B8}
+input[type=range].slider{width:100%;accent-color:#FF6B2B;height:4px;cursor:pointer}
+.slider-limits{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:9px;color:#CBD5E1;margin-top:2px}
+.reset-btn{font-size:10px;font-weight:600;color:#FF6B2B;background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px}
+.reset-btn:hover{color:#E85A1A}
+
+/* ── disturbance test ── */
+.dist-row{display:flex;align-items:center;gap:8px;padding:10px 12px;background:#F8FAFF;border:1px solid #DBEAFE;border-radius:7px;margin-bottom:8px;flex-wrap:wrap}
+.dist-label{font-size:11px;font-weight:600;color:#2563EB;white-space:nowrap}
+.dist-input{font-family:'JetBrains Mono',monospace;font-size:11px;border:1px solid #DBEAFE;border-radius:4px;padding:4px 8px;width:60px;outline:none;background:#fff}
+.dist-toggle{display:flex;align-items:center;gap:6px;font-size:11px;color:#555}
+
+/* ── sim warning ── */
+.sim-notice{background:#FFFBEB;border:1px solid #FDE68A;border-radius:6px;padding:8px 12px;font-size:11px;color:#78350F;line-height:1.5;margin-bottom:12px}
+
+/* ── buttons ── */
+.btn{display:inline-flex;align-items:center;gap:5px;font-family:inherit;font-weight:600;border:none;cursor:pointer;transition:all .15s;border-radius:5px;font-size:12px;line-height:1}
+.btn-orange{background:#FF6B2B;color:#fff;padding:8px 16px}
+.btn-orange:hover{background:#E85A1A}
+.btn-outline{background:#fff;color:#555;border:1px solid #D4D4D4;padding:7px 14px}
+.btn-outline:hover{background:#F5F6F8}
+.btn-sm{padding:5px 10px;font-size:11px}
+.btn-icon{background:none;border:none;cursor:pointer;font-size:14px;padding:3px;color:#aaa}
+.btn-icon:hover{color:#FF6B2B}
+
+.action-bar{position:fixed;bottom:0;left:168px;right:0;background:#fff;border-top:1px solid #E8E8E8;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;z-index:50}
+.action-bar-info{font-size:12px;color:#666}
+.action-bar-info strong{color:#1A1A1A;font-weight:600}
+.action-bar-right{display:flex;gap:8px}
+
+.toast{position:fixed;bottom:72px;right:24px;background:#1A1A1A;color:#fff;font-size:12px;font-weight:500;padding:10px 16px;border-radius:6px;border-left:3px solid #FF6B2B;box-shadow:0 4px 20px rgba(0,0,0,.2);transform:translateY(60px);opacity:0;transition:all .25s cubic-bezier(.34,1.56,.64,1);z-index:999;pointer-events:none}
+.toast.show{transform:translateY(0);opacity:1}
+
+/* animation */
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.animate-in{animation:fadeIn .35s ease}
+</style>
+</head>
+<body>
+
+<header class="g-topbar">
+  <a class="g-logo"><div class="g-logo-icon">P</div><span class="g-logo-name">PID Tuning Tool</span></a>
+  <nav class="g-nav">
+    <a class="g-nav-item">데이터 관리</a>
+    <a class="g-nav-item pill">Tuning 작업</a>
+    <a class="g-nav-item">Loop 진단</a>
+    <a class="g-nav-item">보고서</a>
+    <a class="g-nav-item">설정</a>
+  </nav>
+  <div class="g-topbar-right">
+    <button class="g-icon-btn">🔔</button>
+    <button class="g-icon-btn">❓</button>
+    <div class="g-avatar">ENG</div>
+  </div>
+</header>
+
+<div class="layout">
+<aside class="sidebar">
+  <div class="sb-section">
+    <div class="sb-section-header"><div class="sb-section-label"><span class="dot dot-orange"></span>작업함</div></div>
+    <div class="sb-items">
+      <a class="sb-item active">현재 작업</a>
+      <a class="sb-item">진행중 <span class="sb-count">2</span></a>
+      <a class="sb-item">임시저장 <span class="sb-count">5</span></a>
+    </div>
+  </div>
+  <div class="sb-divider"></div>
+  <div class="sb-section">
+    <div class="sb-section-header"><div class="sb-section-label"><span class="dot dot-blue"></span>Tuning 이력</div></div>
+    <div class="sb-items">
+      <a class="sb-item">완료 <span class="sb-count">24</span></a>
+      <a class="sb-item">검토대기 <span class="sb-count">3</span></a>
+    </div>
+  </div>
+  <div class="sb-divider"></div>
+  <div class="sb-section">
+    <div class="sb-section-header"><div class="sb-section-label"><span class="dot dot-green"></span>Loop 목록</div></div>
+    <div class="sb-items">
+      <a class="sb-item">Temperature <span class="sb-count">12</span></a>
+      <a class="sb-item">Pressure <span class="sb-count">8</span></a>
+      <a class="sb-item">Flow <span class="sb-count">15</span></a>
+      <a class="sb-item">Level <span class="sb-count">6</span></a>
+    </div>
+  </div>
+  <div class="sb-divider"></div>
+  <div class="sb-section">
+    <div class="sb-section-header"><div class="sb-section-label"><span class="dot dot-purple"></span>진단함</div></div>
+    <div class="sb-items">
+      <a class="sb-item">Plant Triage <span class="sb-count">41</span></a>
+      <a class="sb-item">불량 Loop <span class="sb-count" style="background:#FEE2E2;color:#DC2626">7</span></a>
+    </div>
+  </div>
+  <div class="sb-bottom">
+    <div class="sb-bottom-item">⭐ 즐겨찾기</div>
+    <div class="sb-bottom-item">⚙ 설정</div>
+  </div>
+</aside>
+
+<main class="main">
+
+  <div class="step-bar">
+    <div class="step-item done"><div class="step-circle">✓</div><span class="step-label">데이터 수집</span></div>
+    <div class="step-sep done"></div>
+    <div class="step-item done"><div class="step-circle">✓</div><span class="step-label">트렌드 분석</span></div>
+    <div class="step-sep done"></div>
+    <div class="step-item done"><div class="step-circle">✓</div><span class="step-label">모델 식별·PID 추천</span></div>
+    <div class="step-sep done"></div>
+    <div class="step-item active"><div class="step-circle">4</div><span class="step-label">시뮬레이션</span></div>
+    <div class="step-sep"></div>
+    <div class="step-item"><div class="step-circle">5</div><span class="step-label">Loop 진단</span></div>
+  </div>
+
+  <div class="page-title-row">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="page-title">시뮬레이션</div>
+      <span class="page-tag">Step 4 / 5</span>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-outline btn-sm" onclick="resetToRecommended()">🔄 추천값으로 초기화</button>
+      <button class="btn btn-outline btn-sm" onclick="exportChart()">📷 그래프 저장</button>
+      <button class="btn btn-orange btn-sm" onclick="showToast('→ Loop 진단으로 이동')">Loop 진단으로 →</button>
+    </div>
+  </div>
+
+  <!-- Loop info bar -->
+  <div class="loop-bar">
+    <span class="lbl">Loop</span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600">TIC-101</span>
+    <div style="width:1px;height:20px;background:#E8E8E8"></div>
+    <span class="lbl">모델</span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#555">Kp=0.824 · τ=3.21 · θ=1.05</span>
+    <div style="width:1px;height:20px;background:#E8E8E8"></div>
+    <span class="lbl">추천 (IMC · Honeywell)</span>
+    <span class="pv-chip chip-pid-new" id="rec-chip">GAIN=1.823 · RSET=3.74 · RATE=0.45</span>
+    <div style="width:1px;height:20px;background:#E8E8E8"></div>
+    <span class="lbl">현재</span>
+    <span class="pv-chip chip-pid-cur" id="cur-chip">GAIN=1.50 · RSET=3.20 · RATE=0.00</span>
+  </div>
+
+  <div class="main-grid">
+
+    <!-- LEFT: Charts + Scenario -->
+    <div>
+
+      <!-- Main sim chart card -->
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-head">
+          <div class="card-head-left">
+            <div class="card-head-icon">📈</div>
+            <span class="card-head-title">폐루프 응답 시뮬레이션</span>
+            <span class="card-head-sub">FOPDT 기반 선형 모델 (비선형·포화 미반영)</span>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:#555;cursor:pointer">
+              <input type="checkbox" id="show-mv-chk" checked onchange="redraw()"> MV 표시
+            </label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:#555;cursor:pointer">
+              <input type="checkbox" id="show-cur-chk" checked onchange="redraw()"> 현재값 표시
+            </label>
+          </div>
+        </div>
+
+        <!-- Scenario selector -->
+        <div class="scenario-row">
+          <span class="scenario-label">시나리오</span>
+          <button class="scen-btn active" id="scen-sp" onclick="setScenario('sp',this)">SV Step 추종</button>
+          <button class="scen-btn" id="scen-dist" onclick="setScenario('dist',this)">부하 외란 (Load Disturbance)</button>
+          <button class="scen-btn" id="scen-both" onclick="setScenario('both',this)">SP + 외란 복합</button>
+          <div style="display:flex;align-items:center;gap:6px;margin-left:auto">
+            <span style="font-size:11px;color:#888">ΔSV</span>
+            <input type="number" class="sv-step-input" id="sv-step" value="10" min="1" max="50" onchange="redraw()">
+            <span style="font-size:11px;color:#888">°C</span>
+          </div>
+        </div>
+
+        <div class="card-body" style="padding-bottom:8px">
+          <!-- PV chart -->
+          <div class="sim-chart-wrap">
+            <canvas id="sim-pv-chart"></canvas>
+          </div>
+          <!-- MV chart -->
+          <div class="sim-chart-wrap2" id="mv-chart-wrap">
+            <canvas id="sim-mv-chart"></canvas>
+          </div>
+          <div class="chart-legend">
+            <div class="leg-item"><div class="leg-line" style="background:#FF6B2B"></div>추천 PID (PV)</div>
+            <div class="leg-item"><div class="leg-dashed" style="color:#7C3AED"></div>현재 PID (PV)</div>
+            <div class="leg-item"><div class="leg-line" style="background:#94A3B8;border-top:2px dashed #94A3B8;height:0"></div>SV / SP</div>
+            <div class="leg-item"><div class="leg-line" style="background:#059669;opacity:.7"></div>MV (추천)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sim notice -->
+      <div class="sim-notice">
+        ⚠ 이 시뮬레이션은 FOPDT 선형 모델 기반입니다. 밸브 포화, 공정 비선형성, 실제 노이즈는 반영되지 않으므로 실제 공정 응답과 차이가 있을 수 있습니다.
+      </div>
+
+    </div>
+
+    <!-- RIGHT: Controls + KPIs -->
+    <div>
+
+      <!-- KPI card -->
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-head">
+          <div class="card-head-left">
+            <div class="card-head-icon">📊</div>
+            <span class="card-head-title">성능 지표</span>
+          </div>
+          <span id="kpi-scenario-label" style="font-size:11px;color:#aaa">SV Step +10°C</span>
+        </div>
+        <div class="card-body">
+          <div class="kpi-grid" id="kpi-grid">
+            <!-- populated by JS -->
+          </div>
+          <!-- IAE comparison bar -->
+          <div style="padding-top:10px;border-top:1px solid #F0F0F0">
+            <div style="font-size:11px;font-weight:600;color:#888;margin-bottom:8px">IAE 비교 (낮을수록 좋음)</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+              <div style="font-size:11px;color:#FF6B2B;min-width:44px;font-weight:600">추천</div>
+              <div style="flex:1;height:8px;background:#F0F0F0;border-radius:4px;overflow:hidden">
+                <div id="iae-new-bar" style="height:100%;background:#FF6B2B;border-radius:4px;transition:width .5s"></div>
+              </div>
+              <div id="iae-new-val" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#FF6B2B;min-width:50px;text-align:right"></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="font-size:11px;color:#7C3AED;min-width:44px;font-weight:600">현재</div>
+              <div style="flex:1;height:8px;background:#F0F0F0;border-radius:4px;overflow:hidden">
+                <div id="iae-cur-bar" style="height:100%;background:#7C3AED;border-radius:4px;opacity:.5;transition:width .5s"></div>
+              </div>
+              <div id="iae-cur-val" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#7C3AED;min-width:50px;text-align:right"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Slider control card -->
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-head">
+          <div class="card-head-left">
+            <div class="card-head-icon">🎛</div>
+            <span class="card-head-title">파라미터 조정</span>
+            <span class="card-head-sub">실시간 응답 반영</span>
+          </div>
+          <button class="reset-btn" onclick="resetToRecommended()">추천값으로 초기화</button>
+        </div>
+        <div class="card-body">
+          <div class="slider-section">
+            <div class="slider-section-title">
+              <span>P — Proportional (GAIN)</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#aaa" id="p-dcs-label">Honeywell: GAIN</span>
+            </div>
+            <div class="slider-row">
+              <div class="slider-top">
+                <span class="slider-name">GAIN</span>
+                <div class="slider-vals">
+                  <span class="slider-val-new" id="sl-p-val">1.823</span>
+                  <span class="slider-val-rec" id="sl-p-rec">(추천: 1.823)</span>
+                </div>
+              </div>
+              <input type="range" class="slider" id="sl-p" min="0.1" max="5" step="0.001" value="1.823" oninput="onSlider('p',this.value)">
+              <div class="slider-limits"><span>0.1</span><span>5.0</span></div>
+            </div>
+          </div>
+
+          <div class="slider-section">
+            <div class="slider-section-title">
+              <span>I — Integral (RSET)</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#aaa" id="i-dcs-label">Honeywell: RSET (min/rep)</span>
+            </div>
+            <div class="slider-row">
+              <div class="slider-top">
+                <span class="slider-name">RSET</span>
+                <div class="slider-vals">
+                  <span class="slider-val-new" id="sl-i-val">3.735</span>
+                  <span class="slider-val-rec" id="sl-i-rec">(추천: 3.735)</span>
+                </div>
+              </div>
+              <input type="range" class="slider" id="sl-i" min="0.1" max="20" step="0.01" value="3.735" oninput="onSlider('i',this.value)">
+              <div class="slider-limits"><span>0.1</span><span>20</span></div>
+            </div>
+          </div>
+
+          <div class="slider-section">
+            <div class="slider-section-title">
+              <span>D — Derivative (RATE)</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#aaa" id="d-dcs-label">Honeywell: RATE (min)</span>
+            </div>
+            <div class="slider-row">
+              <div class="slider-top">
+                <span class="slider-name">RATE</span>
+                <div class="slider-vals">
+                  <span class="slider-val-new" id="sl-d-val">0.447</span>
+                  <span class="slider-val-rec" id="sl-d-rec">(추천: 0.447)</span>
+                </div>
+              </div>
+              <input type="range" class="slider" id="sl-d" min="0" max="5" step="0.001" value="0.447" oninput="onSlider('d',this.value)">
+              <div class="slider-limits"><span>0</span><span>5</span></div>
+            </div>
+          </div>
+
+          <!-- Disturbance test -->
+          <div class="dist-row">
+            <span class="dist-label">🔀 외란 크기</span>
+            <input type="number" class="dist-input" id="dist-mag" value="5" min="0" max="30" onchange="redraw()">
+            <span style="font-size:11px;color:#555">% MV 스텝</span>
+            <label class="dist-toggle" style="margin-left:auto">
+              <input type="checkbox" id="dist-enable" onchange="redraw()"> 외란 활성화
+            </label>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+</div>
+
+<div class="action-bar">
+  <div class="action-bar-info">
+    <strong id="ab-summary">추천 PID 시뮬레이션 완료</strong> &nbsp;—&nbsp; 결과를 확인하고 Loop 진단으로 이동하세요.
+  </div>
+  <div class="action-bar-right">
+    <button class="btn btn-outline" onclick="showToast('← 모델 식별·PID 추천으로 이동')">← 이전</button>
+    <button class="btn btn-orange" onclick="showToast('→ Loop 진단 화면으로 이동 (Screen 5 구현 예정)')">Loop 진단으로 이동 →</button>
+  </div>
+</div>
+
+<div class="toast" id="toast-el"></div>
+
+<script>
+// ══════════════════════════════════════════
+// PROCESS & PID PARAMETERS
+// ══════════════════════════════════════════
+const PROC = { kp:0.824, tau:3.21, theta:1.05 };
+
+const REC  = { p:1.823, i:3.735, d:0.447 };   // recommended (Honeywell units)
+const CUR  = { p:1.500, i:3.200, d:0.000 };   // current DCS
+
+let TUNED  = { p:1.823, i:3.735, d:0.447 };   // user-adjusted (starts = REC)
+let SCENARIO = 'sp';
+
+// ══════════════════════════════════════════
+// SIMULATION ENGINE  (Euler, dt=0.1 min)
+// ══════════════════════════════════════════
+function simulate(Kc, Ti, Td, svStep, distMag, distEnable, duration=40) {
+  const dt=0.1;
+  const N=Math.round(duration/dt);
+  const deadPts=Math.round(PROC.theta/dt);
+  const tau=PROC.tau, kp=PROC.kp;
+
+  const pv=[120], mv_=[50], err_=[0];
+  let integral=0, prevErr=0;
+  const mvBuf=new Array(deadPts+1).fill(50);
+  const spArr=[], distArr=[], tArr=[];
+  let sp=120;
+
+  for(let i=0;i<N;i++){
+    const t=i*dt;
+    // SP step at t=5
+    if(t>=5) sp=120+svStep;
+    // disturbance at t=20 (shift in load)
+    const distActive = distEnable && t>=20 && t<22;
+    const distVal = distActive ? distMag : 0;
+
+    const e = sp - pv[pv.length-1];
+    integral += e*dt;
+    const deriv = (e - prevErr)/dt;
+    prevErr = e;
+    // PID output
+    const mvRaw = Kc*(e + (Ti>0?integral/Ti:0) + Td*deriv) + 50 + distVal;
+    const mvClamped = Math.max(0, Math.min(100, mvRaw));
+
+    // FOPDT with delay buffer
+    mvBuf.push(mvClamped);
+    const mvDelayed = mvBuf.shift();
+
+    // Process update
+    const pvNew = pv[pv.length-1] + dt*(kp*mvDelayed - pv[pv.length-1] + 120 - kp*50) / tau;
+    pv.push(+pvNew.toFixed(3));
+    mv_.push(+mvClamped.toFixed(2));
+    spArr.push(sp);
+    tArr.push(+t.toFixed(1));
+  }
+  return { pv: pv.slice(1), mv: mv_.slice(1), sp: spArr, t: tArr };
+}
+
+// ══════════════════════════════════════════
+// PERFORMANCE METRICS
+// ══════════════════════════════════════════
+function calcMetrics(res, svStep) {
+  const pv=res.pv, sp=res.sp, mv=res.mv, dt=0.1;
+  const pvBase=120, spFinal=120+svStep;
+
+  // rise time (10% → 90% of step)
+  const lo=pvBase+svStep*0.1, hi=pvBase+svStep*0.9;
+  const t10=res.t[pv.findIndex(v=>v>=lo)];
+  const t90=res.t[pv.findIndex(v=>v>=hi)];
+  const riseTime=t10!=null&&t90!=null?+(t90-t10).toFixed(2):null;
+
+  // overshoot
+  const pvPeak=Math.max(...pv);
+  const overshoot=+(((pvPeak-spFinal)/svStep)*100).toFixed(1);
+
+  // settling time (within 5% of final)
+  const band=svStep*0.05;
+  let settleIdx=pv.length-1;
+  for(let i=pv.length-1;i>=0;i--){
+    if(Math.abs(pv[i]-spFinal)>band){settleIdx=i;break;}
+  }
+  const settleTime=+(res.t[settleIdx]||0).toFixed(1);
+
+  // IAE
+  const spStep=res.sp.findIndex(s=>s>120);
+  const iae=+(pv.slice(spStep).reduce((s,v,i)=>s+Math.abs(sp[spStep+i]-v)*dt,0)).toFixed(1);
+
+  // ISE
+  const ise=+(pv.slice(spStep).reduce((s,v,i)=>s+Math.pow(sp[spStep+i]-v,2)*dt,0)).toFixed(1);
+
+  return {riseTime,overshoot,settleTime,iae,ise};
+}
+
+// ══════════════════════════════════════════
+// CHARTS
+// ══════════════════════════════════════════
+let pvChart=null, mvChart=null;
+
+function initCharts() {
+  const pvCtx=document.getElementById('sim-pv-chart').getContext('2d');
+  pvChart=new Chart(pvCtx,{
+    type:'line',
+    data:{labels:[],datasets:[
+      {label:'추천 PID (PV)',data:[],borderColor:'#FF6B2B',borderWidth:2,pointRadius:0,tension:.3,fill:false,yAxisID:'y'},
+      {label:'현재 PID (PV)',data:[],borderColor:'#7C3AED',borderWidth:1.5,borderDash:[5,3],pointRadius:0,tension:.3,fill:false,yAxisID:'y'},
+      {label:'SV',data:[],borderColor:'#94A3B8',borderWidth:1,borderDash:[3,3],pointRadius:0,tension:.0,fill:false,yAxisID:'y'},
+    ]},
+    options:{
+      animation:{duration:300},responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},tooltip:{
+        callbacks:{label:c=>`${c.dataset.label}: ${(+c.parsed.y).toFixed(2)}`}
+      }},
+      scales:{
+        x:{grid:{color:'#F5F5F5'},ticks:{font:{family:"'JetBrains Mono',monospace",size:9},color:'#aaa',maxTicksLimit:10},title:{display:true,text:'시간 (min)',font:{size:9},color:'#aaa'}},
+        y:{grid:{color:'#F5F5F5'},ticks:{font:{family:"'JetBrains Mono',monospace",size:9},color:'#aaa',maxTicksLimit:6},title:{display:true,text:'°C',font:{size:9},color:'#aaa'}}
+      }
+    }
+  });
+
+  const mvCtx=document.getElementById('sim-mv-chart').getContext('2d');
+  mvChart=new Chart(mvCtx,{
+    type:'line',
+    data:{labels:[],datasets:[
+      {label:'MV (추천)',data:[],borderColor:'#059669',borderWidth:1.5,pointRadius:0,tension:.1,fill:true,backgroundColor:'rgba(5,150,105,.06)',yAxisID:'y'},
+      {label:'MV (현재)',data:[],borderColor:'#7C3AED',borderWidth:1,borderDash:[4,3],pointRadius:0,tension:.1,fill:false,yAxisID:'y'},
+    ]},
+    options:{
+      animation:{duration:300},responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{enabled:false}},
+      scales:{
+        x:{display:false},
+        y:{grid:{color:'#F5F5F5'},min:0,max:100,ticks:{font:{family:"'JetBrains Mono',monospace",size:9},color:'#aaa',maxTicksLimit:4},title:{display:true,text:'% MV',font:{size:9},color:'#aaa'}}
+      }
+    }
+  });
+}
+
+// ══════════════════════════════════════════
+// REDRAW
+// ══════════════════════════════════════════
+let redrawTimer=null;
+function redraw() {
+  clearTimeout(redrawTimer);
+  redrawTimer=setTimeout(_redraw,60);
+}
+
+function _redraw() {
+  const svStep=+(document.getElementById('sv-step').value)||10;
+  const distMag=+(document.getElementById('dist-mag').value)||5;
+  const distEnable=document.getElementById('dist-enable').checked;
+  const showCur=document.getElementById('show-cur-chk').checked;
+  const showMvChk=document.getElementById('show-mv-chk').checked;
+
+  const scenario=SCENARIO;
+  const spStep=scenario==='sp'||scenario==='both'?svStep:0;
+  const dist=scenario==='dist'||scenario==='both'?distMag:distEnable?distMag:0;
+  const distOn=scenario==='dist'||scenario==='both'||(distEnable&&dist>0);
+
+  // Simulate recommended
+  const resNew=simulate(TUNED.p,TUNED.i,TUNED.d,spStep,dist,distOn);
+  const resCur=simulate(CUR.p,CUR.i,CUR.d,spStep,dist,distOn);
+
+  // Update charts
+  pvChart.data.labels=resNew.t;
+  pvChart.data.datasets[0].data=resNew.pv;
+  pvChart.data.datasets[1].data=showCur?resCur.pv:[];
+  pvChart.data.datasets[2].data=resNew.sp;
+  pvChart.update('none');
+
+  mvChart.data.labels=resNew.t;
+  mvChart.data.datasets[0].data=resNew.mv;
+  mvChart.data.datasets[1].data=showCur?resCur.mv:[];
+  document.getElementById('mv-chart-wrap').style.display=showMvChk?'':'none';
+  mvChart.update('none');
+
+  // KPIs
+  const mNew=calcMetrics(resNew,spStep||5);
+  const mCur=calcMetrics(resCur,spStep||5);
+  renderKPIs(mNew,mCur);
+
+  // ab summary
+  document.getElementById('ab-summary').textContent=
+    `추천 PID — IAE: ${mNew.iae}  Overshoot: ${mNew.overshoot}%  Settling: ${mNew.settleTime} min`;
+}
+
+// ══════════════════════════════════════════
+// KPI RENDER
+// ══════════════════════════════════════════
+function renderKPIs(mNew, mCur) {
+  const kpis=[
+    {label:'Rise Time',      newV:mNew.riseTime, oldV:mCur.riseTime, unit:'min',  lowerBetter:true},
+    {label:'Overshoot',      newV:mNew.overshoot,oldV:mCur.overshoot,unit:'%',    lowerBetter:true},
+    {label:'Settling Time',  newV:mNew.settleTime,oldV:mCur.settleTime,unit:'min',lowerBetter:true},
+    {label:'ISE',            newV:mNew.ise,      oldV:mCur.ise,      unit:'',     lowerBetter:true},
+  ];
+
+  const grid=document.getElementById('kpi-grid');
+  grid.innerHTML=kpis.map(k=>{
+    const improved=k.lowerBetter?(k.newV<k.oldV):(k.newV>k.oldV);
+    const cls=k.oldV!=null?(improved?'improved':'worsened'):'';
+    const diff=k.oldV!=null?+(k.newV-k.oldV).toFixed(2):null;
+    const sign=diff>0?'+':'';
+    const deltaCls=improved?'delta-good':'delta-bad';
+    return `<div class="kpi-item ${cls}">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-row">
+        <span class="kpi-new">${k.newV??'—'}</span>
+        <span class="kpi-unit">${k.unit}</span>
+        ${k.oldV!=null?`<span class="kpi-old">${k.oldV}</span>`:''}
+      </div>
+      ${diff!=null?`<div class="kpi-delta ${deltaCls}">${sign}${diff} ${k.unit} vs 현재</div>`:''}
+    </div>`;
+  }).join('');
+
+  // IAE bar
+  const maxIAE=Math.max(mNew.iae,mCur.iae,1);
+  document.getElementById('iae-new-bar').style.width=(mNew.iae/maxIAE*100)+'%';
+  document.getElementById('iae-cur-bar').style.width=(mCur.iae/maxIAE*100)+'%';
+  document.getElementById('iae-new-val').textContent=mNew.iae;
+  document.getElementById('iae-cur-val').textContent=mCur.iae;
+}
+
+// ══════════════════════════════════════════
+// EVENTS
+// ══════════════════════════════════════════
+function onSlider(key, val) {
+  TUNED[key]=+val;
+  document.getElementById('sl-'+key+'-val').textContent=(+val).toFixed(3);
+  redraw();
+}
+
+function setScenario(sc, el) {
+  SCENARIO=sc;
+  document.querySelectorAll('.scen-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  const labels={sp:'SV Step 추종',dist:'Load Disturbance',both:'SP + 외란'};
+  document.getElementById('kpi-scenario-label').textContent=labels[sc]||sc;
+  document.getElementById('dist-enable').checked=(sc==='dist'||sc==='both');
+  redraw();
+}
+
+function resetToRecommended() {
+  TUNED={...REC};
+  ['p','i','d'].forEach(k=>{
+    document.getElementById('sl-'+k).value=REC[k];
+    document.getElementById('sl-'+k+'-val').textContent=REC[k];
+  });
+  redraw();
+  showToast('🔄 추천값으로 초기화됨');
+}
+
+function exportChart() { showToast('📷 차트 이미지 저장 (구현 예정)'); }
+
+// ── Init ──────────────────────────────────
+window.addEventListener('load',()=>{
+  initCharts();
+  redraw();
+});
+
+let _tt;
+function showToast(msg){
+  const el=document.getElementById('toast-el');
+  el.textContent=msg;el.classList.add('show');
+  clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),2800);
+}
+</script>
+</body>
+</html>

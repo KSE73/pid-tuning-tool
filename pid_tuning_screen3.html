@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PID Tuning Tool — 모델 식별 · PID 추천</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;background:#F5F6F8;color:#1A1A1A;font-size:13px}
+
+/* ── TOPBAR ── */
+.g-topbar{position:fixed;top:0;left:0;right:0;z-index:200;height:48px;background:#1C1C1E;display:flex;align-items:center;padding:0 16px}
+.g-logo{display:flex;align-items:center;gap:8px;padding-right:20px;border-right:1px solid #333;margin-right:4px;text-decoration:none}
+.g-logo-icon{width:28px;height:28px;background:#FF6B2B;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:800}
+.g-logo-name{color:#fff;font-size:14px;font-weight:700}
+.g-nav{display:flex;align-items:center;flex:1}
+.g-nav-item{height:48px;display:flex;align-items:center;padding:0 14px;color:#999;font-size:13px;font-weight:500;cursor:pointer;text-decoration:none;white-space:nowrap}
+.g-nav-item.pill{background:#FF6B2B;color:#fff;border-radius:20px;height:28px;padding:0 14px;margin:0 2px}
+.g-topbar-right{display:flex;align-items:center;gap:10px;margin-left:auto}
+.g-icon-btn{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:15px;cursor:pointer;background:none;border:none}
+.g-avatar{width:30px;height:30px;background:#444;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#ccc;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid #555}
+
+/* ── LAYOUT ── */
+.layout{display:flex;padding-top:48px;min-height:100vh}
+
+/* ── SIDEBAR ── */
+.sidebar{width:168px;min-width:168px;background:#fff;border-right:1px solid #E8E8E8;position:fixed;top:48px;left:0;bottom:0;overflow-y:auto;z-index:100;padding:8px 0 60px}
+.sb-section{margin-bottom:2px}
+.sb-section-header{display:flex;align-items:center;justify-content:space-between;padding:7px 14px 5px;cursor:pointer;user-select:none}
+.sb-section-label{font-size:12px;font-weight:700;color:#1A1A1A;display:flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%}
+.dot-orange{background:#FF6B2B}.dot-blue{background:#3B82F6}.dot-green{background:#10B981}.dot-purple{background:#8B5CF6}
+.sb-items{padding-bottom:4px}
+.sb-item{display:flex;align-items:center;justify-content:space-between;padding:6px 14px 6px 26px;color:#555;font-size:12px;cursor:pointer;text-decoration:none;position:relative;transition:background .1s}
+.sb-item:hover{background:#F5F6F8;color:#1A1A1A}
+.sb-item.active{background:#FFF0E8;color:#FF6B2B;font-weight:600}
+.sb-item.active::before{content:'';position:absolute;left:0;top:4px;bottom:4px;width:3px;background:#FF6B2B;border-radius:0 3px 3px 0}
+.sb-count{font-size:11px;color:#999;background:#F0F0F0;padding:1px 6px;border-radius:10px;font-weight:500}
+.sb-divider{height:1px;background:#F0F0F0;margin:6px 14px}
+.sb-bottom{position:absolute;bottom:0;left:0;right:0;border-top:1px solid #F0F0F0;background:#fff;padding:8px 0}
+.sb-bottom-item{display:flex;align-items:center;gap:8px;padding:7px 14px;color:#666;font-size:12px;cursor:pointer}
+.sb-bottom-item:hover{background:#F5F6F8}
+
+/* ── MAIN ── */
+.main{margin-left:168px;flex:1;min-width:0;padding:20px 24px 80px}
+
+/* ── Step bar ── */
+.step-bar{display:flex;align-items:center;background:#fff;border:1px solid #E8E8E8;border-radius:8px;padding:10px 18px;margin-bottom:14px;overflow-x:auto;gap:0}
+.step-item{display:flex;align-items:center;gap:7px;flex-shrink:0}
+.step-circle{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;border:2px solid #E0E0E0;color:#B0B0B0;background:#fff}
+.step-item.done .step-circle{background:#10B981;border-color:#10B981;color:#fff}
+.step-item.active .step-circle{background:#FF6B2B;border-color:#FF6B2B;color:#fff}
+.step-label{font-size:11px;font-weight:500;color:#bbb}
+.step-item.active .step-label{color:#FF6B2B;font-weight:600}
+.step-item.done .step-label{color:#10B981}
+.step-sep{width:24px;height:1px;background:#E0E0E0;margin:0 3px;flex-shrink:0}
+.step-sep.done{background:#10B981}
+
+/* ── Page title ── */
+.page-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.page-title{font-size:18px;font-weight:700;color:#1A1A1A;letter-spacing:-.3px}
+
+/* ── Loop info bar ── */
+.loop-bar{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #E8E8E8;border-radius:8px;padding:10px 16px;margin-bottom:14px}
+.loop-bar-label{font-size:11px;font-weight:600;color:#888;white-space:nowrap}
+.pv-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:12px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600}
+.chip-pv{background:#EFF6FF;color:#2563EB;border:1px solid #BFDBFE}
+.chip-mv{background:#ECFDF5;color:#059669;border:1px solid #A7F3D0}
+.chip-region{background:#FFF0E8;color:#FF6B2B;border:1px solid #FDDCCC}
+.loop-sep{width:1px;height:20px;background:#E8E8E8}
+
+/* ── Grid layouts ── */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+
+/* ── Card ── */
+.card{background:#fff;border:1px solid #E8E8E8;border-radius:8px;margin-bottom:14px}
+.card-head{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid #F0F0F0}
+.card-head-left{display:flex;align-items:center;gap:8px}
+.card-head-icon{width:24px;height:24px;background:#FFF0E8;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:13px}
+.card-head-title{font-size:13px;font-weight:700;color:#1A1A1A}
+.card-head-sub{font-size:11px;color:#aaa;margin-left:4px}
+.card-body{padding:16px}
+
+/* ── FOPDT param cards ── */
+.fopdt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.fopdt-item{border:1px solid #E8E8E8;border-radius:8px;padding:14px 16px;background:#FAFAFA;position:relative}
+.fopdt-item.highlight{border-color:#BFDBFE;background:#EFF6FF}
+.fopdt-symbol{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:500;color:#2563EB;line-height:1;margin-bottom:4px}
+.fopdt-name{font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+.fopdt-val{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:500;color:#1A1A1A;line-height:1}
+.fopdt-unit{font-size:11px;color:#aaa;margin-top:3px}
+.fopdt-ci{font-family:'JetBrains Mono',monospace;font-size:10px;color:#94A3B8;margin-top:5px}
+.conf-badge{position:absolute;top:10px;right:10px;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px}
+.conf-high{background:#ECFDF5;color:#059669;border:1px solid #A7F3D0}
+.conf-mid{background:#FFFBEB;color:#D97706;border:1px solid #FDE68A}
+.conf-low{background:#FEF2F2;color:#DC2626;border:1px solid #FECACA}
+
+/* ── Model fit chart ── */
+.fit-chart-wrap{position:relative;height:200px}
+
+/* ── R² bar ── */
+.r2-bar-wrap{display:flex;align-items:center;gap:12px;margin-top:12px;padding-top:12px;border-top:1px solid #F0F0F0}
+.r2-label{font-size:11px;font-weight:600;color:#888;white-space:nowrap;min-width:60px}
+.r2-track{flex:1;height:8px;background:#F0F0F0;border-radius:4px;overflow:hidden}
+.r2-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#10B981,#059669);transition:width .6s cubic-bezier(.34,1.56,.64,1)}
+.r2-val{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:#059669;min-width:40px;text-align:right}
+
+/* ── Method selector ── */
+.method-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.method-card{border:1.5px solid #E8E8E8;border-radius:8px;padding:12px 14px;cursor:pointer;transition:all .15s;position:relative}
+.method-card:hover{border-color:#FF6B2B;background:#FFF6F2}
+.method-card.selected{border-color:#FF6B2B;background:#FFF0E8}
+.method-card.selected::before{content:'✓';position:absolute;top:8px;right:10px;font-size:11px;font-weight:700;color:#FF6B2B}
+.method-name{font-size:13px;font-weight:700;color:#1A1A1A;margin-bottom:3px}
+.method-tag{display:inline-block;font-size:10px;font-weight:600;padding:1px 6px;border-radius:3px;margin-bottom:5px}
+.tag-recommended{background:#FFF0E8;color:#FF6B2B;border:1px solid #FDDCCC}
+.tag-stable{background:#F0FAF6;color:#059669;border:1px solid #C8EEE0}
+.tag-fast{background:#EFF6FF;color:#2563EB;border:1px solid #BFDBFE}
+.tag-classic{background:#F5F3FF;color:#7C3AED;border:1px solid #DDD6FE}
+.method-desc{font-size:11px;color:#888;line-height:1.4}
+
+/* ── Lambda slider ── */
+.lambda-row{display:flex;align-items:center;gap:12px;padding:12px 16px;background:#FFF8F5;border:1px solid #FDDCCC;border-radius:7px;margin-bottom:14px}
+.lambda-label{font-size:12px;font-weight:600;color:#555;white-space:nowrap}
+.lambda-slider{flex:1;accent-color:#FF6B2B}
+.lambda-val{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:600;color:#FF6B2B;min-width:36px;text-align:center}
+.lambda-hint{font-size:11px;color:#aaa}
+
+/* ── DCS param output ── */
+.dcs-param-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.dcs-param{border:1px solid #E8E8E8;border-radius:8px;padding:14px 16px;background:#FAFAFA;text-align:center}
+.dcs-param.changed{border-color:#FF6B2B;background:#FFF0E8}
+.dcs-param-key{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.dcs-param-val{font-family:'JetBrains Mono',monospace;font-size:30px;font-weight:500;color:#1A1A1A;line-height:1;margin-bottom:3px}
+.dcs-param.changed .dcs-param-val{color:#FF6B2B}
+.dcs-param-unit{font-size:11px;color:#aaa}
+.dcs-param-prev{font-family:'JetBrains Mono',monospace;font-size:11px;color:#94A3B8;margin-top:6px;text-decoration:line-through}
+.dcs-param-delta{font-size:10px;font-weight:600;margin-top:3px}
+.delta-up{color:#059669}.delta-dn{color:#DC2626}
+
+/* ── Basis panel ── */
+.basis-toggle{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;cursor:pointer;font-size:12px;font-weight:600;color:#FF6B2B;border-top:1px solid #F0F0F0}
+.basis-body{padding:0 16px 16px;display:none}
+.basis-body.open{display:block}
+.basis-step{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid #F5F5F5}
+.basis-step:last-child{border-bottom:none}
+.basis-num{width:22px;height:22px;border-radius:50%;background:#FF6B2B;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.basis-text{font-size:12px;color:#444;line-height:1.6}
+.basis-text .math{font-family:'JetBrains Mono',monospace;background:#F5F5F5;border:1px solid #E8E8E8;border-radius:3px;padding:1px 5px;font-size:11px;color:#1A1A1A}
+.basis-text .result{font-family:'JetBrains Mono',monospace;font-weight:700;color:#FF6B2B}
+
+/* ── Uncertainty banner ── */
+.uncertainty-bar{display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:7px;margin-bottom:14px;font-size:12px}
+.ub-high{background:#F0FAF6;border:1px solid #C8EEE0;color:#065F46}
+.ub-mid{background:#FFFBEB;border:1px solid #FDE68A;color:#78350F}
+.ub-low{background:#FEF2F2;border:1px solid #FECACA;color:#7F1D1D}
+.ub-icon{font-size:16px}
+.ub-text{flex:1;line-height:1.5}
+.ub-badge{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;padding:2px 10px;border-radius:10px}
+.ub-high .ub-badge{background:#ECFDF5;color:#059669}
+.ub-mid .ub-badge{background:#FEF9C3;color:#A16207}
+.ub-low .ub-badge{background:#FEE2E2;color:#DC2626}
+
+/* ── Compare table ── */
+.compare-table{width:100%;border-collapse:collapse;font-size:12px}
+.compare-table th{padding:8px 12px;font-size:11px;font-weight:600;text-align:left;background:#F5F6F8;border-bottom:1px solid #E8E8E8;color:#666}
+.compare-table td{padding:9px 12px;border-bottom:1px solid #F5F5F5;color:#333}
+.compare-table tr:last-child td{border-bottom:none}
+.compare-table tr:hover td{background:#FAFAFA}
+.td-mono{font-family:'JetBrains Mono',monospace}
+.td-new{font-family:'JetBrains Mono',monospace;font-weight:700;color:#FF6B2B}
+.td-improve{font-size:11px;font-weight:600}
+.improve-up{color:#059669}.improve-dn{color:#DC2626}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:5px;font-family:inherit;font-weight:600;border:none;cursor:pointer;transition:all .15s;border-radius:5px;font-size:12px;line-height:1}
+.btn-orange{background:#FF6B2B;color:#fff;padding:8px 16px}
+.btn-orange:hover{background:#E85A1A}
+.btn-outline{background:#fff;color:#555;border:1px solid #D4D4D4;padding:7px 14px}
+.btn-outline:hover{background:#F5F6F8}
+.btn-sm{padding:5px 10px;font-size:11px}
+
+/* ── Action bar ── */
+.action-bar{position:fixed;bottom:0;left:168px;right:0;background:#fff;border-top:1px solid #E8E8E8;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;z-index:50}
+.action-bar-info{font-size:12px;color:#666}
+.action-bar-info strong{color:#1A1A1A;font-weight:600}
+.action-bar-right{display:flex;gap:8px}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:72px;right:24px;background:#1A1A1A;color:#fff;font-size:12px;font-weight:500;padding:10px 16px;border-radius:6px;border-left:3px solid #FF6B2B;box-shadow:0 4px 20px rgba(0,0,0,.2);transform:translateY(60px);opacity:0;transition:all .25s cubic-bezier(.34,1.56,.64,1);z-index:999;pointer-events:none}
+.toast.show{transform:translateY(0);opacity:1}
+
+/* ── Tab switcher ── */
+.tab-bar{display:flex;border-bottom:1px solid #E8E8E8;margin-bottom:0}
+.tab{padding:10px 18px;font-size:13px;font-weight:500;color:#888;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
+.tab:hover{color:#555}
+.tab.active{color:#FF6B2B;border-bottom-color:#FF6B2B;font-weight:600}
+
+/* tag */
+.page-tag{font-size:11px;color:#aaa;padding:2px 8px;background:#F5F6F8;border:1px solid #E8E8E8;border-radius:10px}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="g-topbar">
+  <a class="g-logo"><div class="g-logo-icon">P</div><span class="g-logo-name">PID Tuning Tool</span></a>
+  <nav class="g-nav">
+    <a class="g-nav-item">데이터 관리</a>
+    <a class="g-nav-item pill">Tuning 작업</a>
+    <a class="g-nav-item">Loop 진단</a>
+    <a class="g-nav-item">보고서</a>
+    <a class="g-nav-item">설정</a>
+  </nav>
+  <div class="g-topbar-right">
+    <button class="g-icon-btn">🔔</button>
+    <button class="g-icon-btn">❓</button>
+    <div class="g-avatar">ENG</div>
+  </div>
+</header>
+
+<div class="layout">
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sb-section">
+    <div class="sb-section-header"><div class="sb-section-label"><span class="dot dot-orange"></span>작업함</div></div>
+    <div class="sb-items">
+      <a class="sb-item active">현재 작업</a>
+      <a class="sb-item">진행중 <span class="sb-count">2</span></a>
+      <a class="sb-item">임시저장 <span class="sb-count">5</span></a>
+    </div>
+  </div>
+  <div class="sb-divider"></div>
+  <div class="sb-section">
+    <div class="sb-section-header"><div class="sb-section-label"><span class="dot dot-blue"></span>Tuning 이력</div></div>
+    <div class="sb-items">
+      <a class="sb-item">완료 <span class="sb-count">24</span></a>
+      <a class="sb-item">검토대기 <span class="sb-count">3</span></a>
+      <a class="sb-item">적용완료 <span class="sb-count">18</span></a>
+    </div>
+  </div>
+  <div class="sb-divider"></div>
+  <div class="sb-section">
+    <div class="sb-section-header"><div class="sb-section-label"><span class="dot dot-green"></span>Loop 목록</div></div>
+    <div class="sb-items">
+      <a class="sb-item">Temperature <span class="sb-count">12</span></a>
+      <a class="sb-item">Pressure <span class="sb-count">8</span></a>
+      <a class="sb-item">Flow <span class="sb-count">15</span></a>
+      <a class="sb-item">Level <span class="sb-count">6</span></a>
+    </div>
+  </div>
+  <div class="sb-divider"></div>
+  <div class="sb-section">
+    <div class="sb-section-header"><div class="sb-section-label"><span class="dot dot-purple"></span>진단함</div></div>
+    <div class="sb-items">
+      <a class="sb-item">Plant Triage <span class="sb-count">41</span></a>
+      <a class="sb-item">불량 Loop <span class="sb-count" style="background:#FEE2E2;color:#DC2626">7</span></a>
+    </div>
+  </div>
+  <div class="sb-bottom">
+    <div class="sb-bottom-item">⭐ 즐겨찾기</div>
+    <div class="sb-bottom-item">⚙ 설정</div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- Step bar -->
+  <div class="step-bar">
+    <div class="step-item done"><div class="step-circle">✓</div><span class="step-label">데이터 수집</span></div>
+    <div class="step-sep done"></div>
+    <div class="step-item done"><div class="step-circle">✓</div><span class="step-label">트렌드 분석</span></div>
+    <div class="step-sep done"></div>
+    <div class="step-item active"><div class="step-circle">3</div><span class="step-label">모델 식별 · PID 추천</span></div>
+    <div class="step-sep"></div>
+    <div class="step-item"><div class="step-circle">4</div><span class="step-label">시뮬레이션</span></div>
+    <div class="step-sep"></div>
+    <div class="step-item"><div class="step-circle">5</div><span class="step-label">Loop 진단</span></div>
+  </div>
+
+  <!-- Page title -->
+  <div class="page-title-row">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="page-title">모델 식별 · PID 추천</div>
+      <span class="page-tag">Step 3 / 5</span>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-outline btn-sm" onclick="runIdentification()">🔄 재분석</button>
+      <button class="btn btn-orange btn-sm" onclick="exportReport()">📄 보고서 출력</button>
+    </div>
+  </div>
+
+  <!-- Loop bar -->
+  <div class="loop-bar">
+    <span class="loop-bar-label">Loop</span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600">TIC-101</span>
+    <div style="width:1px;height:20px;background:#E8E8E8"></div>
+    <span class="loop-bar-label">DCS</span>
+    <select id="dcs-sel" onchange="recalc()" style="font-family:inherit;font-size:12px;border:1px solid #E0E0E0;border-radius:5px;padding:5px 10px;outline:none;background:#FAFAFA;cursor:pointer">
+      <option value="honeywell">Honeywell Experion PKS</option>
+      <option value="yokogawa">Yokogawa CENTUM VP</option>
+      <option value="deltav">Emerson DeltaV</option>
+      <option value="abb">ABB 800xA</option>
+    </select>
+    <div style="width:1px;height:20px;background:#E8E8E8"></div>
+    <span class="pv-chip chip-pv">PV: 온도 (°C)</span>
+    <span class="pv-chip chip-mv">MV: 밸브 개도 (%)</span>
+    <span class="pv-chip chip-region">구간: 08:30 ~ 09:20</span>
+    <div style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:11px;color:#aaa" id="r2-topbar">R² = 0.943</div>
+  </div>
+
+  <!-- Uncertainty banner -->
+  <div class="uncertainty-bar ub-high" id="unc-bar">
+    <span class="ub-icon">🟢</span>
+    <div class="ub-text">
+      <strong>모델 신뢰도 높음</strong> — R² = 0.943, ΔMV = 12.0%, SNR = 14.2 dB. 식별된 FOPDT 모델이 공정 응답을 잘 설명합니다. 추천 PID 파라미터의 신뢰도는 높습니다.
+    </div>
+    <span class="ub-badge" id="unc-badge">높음</span>
+  </div>
+
+  <!-- ─── TAB: 모델 식별 / PID 추천 ─── -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="tab-bar" style="padding:0 4px">
+      <div class="tab active" onclick="switchTab('model',this)">① FOPDT 모델 식별</div>
+      <div class="tab" onclick="switchTab('pid',this)">② PID 파라미터 추천</div>
+      <div class="tab" onclick="switchTab('compare',this)">③ 현재값 비교</div>
+    </div>
+
+    <!-- ─── MODEL TAB ─── -->
+    <div id="tab-model">
+      <div class="card-body">
+        <div class="grid2" style="margin-bottom:0">
+
+          <!-- FOPDT params -->
+          <div>
+            <div style="font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">식별된 FOPDT 모델 파라미터</div>
+            <div class="fopdt-grid" style="margin-bottom:14px">
+              <div class="fopdt-item highlight">
+                <div class="fopdt-name">Process Gain</div>
+                <div class="fopdt-symbol">Kp</div>
+                <div class="fopdt-val" id="kp-val">0.824</div>
+                <div class="fopdt-unit">°C / %MV</div>
+                <div class="fopdt-ci" id="kp-ci">95% CI: [0.781, 0.867]</div>
+                <span class="conf-badge conf-high">HIGH</span>
+              </div>
+              <div class="fopdt-item highlight">
+                <div class="fopdt-name">Time Constant</div>
+                <div class="fopdt-symbol">τ</div>
+                <div class="fopdt-val" id="tau-val">3.21</div>
+                <div class="fopdt-unit">min</div>
+                <div class="fopdt-ci" id="tau-ci">95% CI: [2.94, 3.48]</div>
+                <span class="conf-badge conf-high">HIGH</span>
+              </div>
+              <div class="fopdt-item highlight">
+                <div class="fopdt-name">Dead Time</div>
+                <div class="fopdt-symbol">θ</div>
+                <div class="fopdt-val" id="theta-val">1.05</div>
+                <div class="fopdt-unit">min</div>
+                <div class="fopdt-ci" id="theta-ci">95% CI: [0.82, 1.28]</div>
+                <span class="conf-badge conf-mid">MID</span>
+              </div>
+            </div>
+
+            <!-- Transfer function display -->
+            <div style="background:#1C1C1E;border-radius:8px;padding:14px 18px;margin-bottom:14px">
+              <div style="font-size:10px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">전달함수 (Transfer Function)</div>
+              <div style="font-family:'JetBrains Mono',monospace;color:#fff;font-size:14px;line-height:2;text-align:center">
+                <span style="color:#94A3B8">G(s) = </span>
+                <span style="color:#60A5FA" id="tf-kp">0.824</span>
+                <span style="color:#94A3B8"> × e</span><sup style="color:#F59E0B">-<span id="tf-theta">1.05</span>s</sup>
+                <span style="color:#94A3B8"> / ( </span>
+                <span style="color:#34D399" id="tf-tau">3.21</span>
+                <span style="color:#94A3B8">s + 1 )</span>
+              </div>
+            </div>
+
+            <!-- R² bar -->
+            <div class="r2-bar-wrap">
+              <span class="r2-label">모델 적합도</span>
+              <div class="r2-track"><div class="r2-fill" id="r2-fill" style="width:94.3%"></div></div>
+              <span class="r2-val" id="r2-val">R² = 0.943</span>
+            </div>
+            <div style="display:flex;gap:16px;margin-top:8px">
+              <span style="font-size:11px;color:#888">RMSE: <span style="font-family:'JetBrains Mono',monospace;color:#555" id="rmse-val">0.38 °C</span></span>
+              <span style="font-size:11px;color:#888">τ/θ 비율: <span style="font-family:'JetBrains Mono',monospace;color:#555" id="ratio-val">3.06</span></span>
+              <span style="font-size:11px;color:#888">식별 방법: <span style="font-family:'JetBrains Mono',monospace;color:#555">Least Squares Fit</span></span>
+            </div>
+          </div>
+
+          <!-- Model fit chart -->
+          <div>
+            <div style="font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">모델 Fit 검증 그래프</div>
+            <div class="fit-chart-wrap">
+              <canvas id="fit-chart"></canvas>
+            </div>
+            <div style="display:flex;gap:16px;margin-top:8px;justify-content:center">
+              <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#555">
+                <div style="width:16px;height:2px;background:#2563EB;border-radius:2px"></div>실측 PV
+              </div>
+              <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#555">
+                <div style="width:16px;height:2px;background:#FF6B2B;border-radius:2px;border-top:2px dashed #FF6B2B;height:0"></div>FOPDT 모델
+              </div>
+              <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#555">
+                <div style="width:16px;height:2px;background:#059669;border-radius:2px"></div>MV
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── PID TAB ─── -->
+    <div id="tab-pid" style="display:none">
+      <div class="card-body">
+        <!-- Method selector -->
+        <div style="font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Tuning Method 선택</div>
+        <div class="method-grid">
+          <div class="method-card selected" onclick="selectMethod('imc',this)">
+            <div class="method-name">IMC Tuning</div>
+            <span class="method-tag tag-recommended">권장</span>
+            <div class="method-desc">λ 파라미터로 응답속도와 안정성 균형 조절. 산업 표준.</div>
+          </div>
+          <div class="method-card" onclick="selectMethod('lambda',this)">
+            <div class="method-name">Lambda (Dahlin)</div>
+            <span class="method-tag tag-stable">안정 우선</span>
+            <div class="method-desc">폐루프 시정수 직접 지정. 느리지만 안정적인 응답.</div>
+          </div>
+          <div class="method-card" onclick="selectMethod('zn',this)">
+            <div class="method-name">Ziegler-Nichols</div>
+            <span class="method-tag tag-fast">빠른 응답</span>
+            <div class="method-desc">고전적 Step Response 방법. 빠른 응답이나 진동 가능성.</div>
+          </div>
+          <div class="method-card" onclick="selectMethod('itae',this)">
+            <div class="method-name">ITAE 최적화</div>
+            <span class="method-tag tag-stable">오차 최소화</span>
+            <div class="method-desc">적분절대오차 최소화 기준. 부하 외란 대응에 유리.</div>
+          </div>
+          <div class="method-card" onclick="selectMethod('cc',this)">
+            <div class="method-name">Cohen-Coon</div>
+            <span class="method-tag tag-classic">고전</span>
+            <div class="method-desc">Dead Time 비율이 큰 공정에 적합한 수정 Ziegler-Nichols.</div>
+          </div>
+          <div class="method-card" onclick="selectMethod('manual',this)">
+            <div class="method-name">수동 입력</div>
+            <span class="method-tag" style="background:#F5F6F8;color:#666;border:1px solid #E0E0E0">사용자 정의</span>
+            <div class="method-desc">P/I/D 값을 직접 입력하여 시뮬레이션에 사용.</div>
+          </div>
+        </div>
+
+        <!-- Lambda slider (IMC) -->
+        <div class="lambda-row" id="lambda-row">
+          <span class="lambda-label">λ (Lambda)</span>
+          <input type="range" class="lambda-slider" id="lambda-slider" min="1" max="20" step="0.5" value="6.42" oninput="onLambda(this.value)">
+          <span class="lambda-val" id="lambda-val">6.42</span>
+          <span style="width:1px;height:16px;background:#E8E8E8"></span>
+          <span class="lambda-hint" id="lambda-hint">= 2× θ &nbsp; 권장: 2~5× Dead Time</span>
+        </div>
+
+        <!-- DCS param output -->
+        <div style="font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">DCS 입력값 (<span id="dcs-name-label">Honeywell Experion PKS</span>)</div>
+        <div class="dcs-param-grid" id="dcs-param-grid">
+          <!-- populated by JS -->
+        </div>
+
+        <!-- Basis panel -->
+        <div style="margin-top:14px;border:1px solid #E8E8E8;border-radius:8px;overflow:hidden">
+          <div class="basis-toggle" onclick="toggleBasis(this)">
+            📐 계산 근거 보기 (수식 전개)
+            <span id="basis-arrow">▾</span>
+          </div>
+          <div class="basis-body" id="basis-body">
+            <div style="margin-bottom:12px;padding:10px 14px;background:#1C1C1E;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.8;color:#94A3B8">
+              <span style="color:#60A5FA">FOPDT 모델:</span> Kp=<span style="color:#34D399" id="b-kp">0.824</span>, τ=<span style="color:#34D399" id="b-tau">3.21</span> min, θ=<span style="color:#F59E0B" id="b-theta">1.05</span> min<br>
+              <span style="color:#60A5FA">Tuning Method:</span> <span style="color:#fff" id="b-method">IMC (Internal Model Control)</span><br>
+              <span style="color:#60A5FA">λ =</span> <span style="color:#FF6B2B" id="b-lambda">6.42</span> min &nbsp;[선택: 약 2× Dead Time]
+            </div>
+            <div id="basis-steps"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ─── COMPARE TAB ─── -->
+    <div id="tab-compare" style="display:none">
+      <div class="card-body">
+        <p style="font-size:12px;color:#888;margin-bottom:14px">현재 DCS 적용값과 추천값을 비교합니다. "현재값" 란에 실제 DCS 설정값을 직접 입력할 수 있습니다.</p>
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th>파라미터</th>
+              <th>DCS 파라미터명</th>
+              <th>현재 DCS 값</th>
+              <th>추천값</th>
+              <th>변화량</th>
+              <th>단위</th>
+            </tr>
+          </thead>
+          <tbody id="compare-tbody"></tbody>
+        </table>
+        <div style="margin-top:14px;padding:12px 16px;background:#F5F6F8;border-radius:7px;font-size:12px;color:#555;line-height:1.6;border:1px solid #E8E8E8">
+          ⚠️ <strong>주의:</strong> 이 화면은 파라미터 추천값을 제시할 뿐이며, DCS에 자동으로 쓰지 않습니다.<br>
+          최종 적용은 반드시 자격을 갖춘 담당 엔지니어가 검토 후 수동으로 수행하시기 바랍니다.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div><!-- /layout -->
+
+<!-- Action bar -->
+<div class="action-bar">
+  <div class="action-bar-info">
+    <strong id="ab-info">TIC-101 · IMC Tuning · Honeywell Experion</strong>&nbsp; — PID 파라미터 계산 완료. 시뮬레이션으로 응답을 확인하세요.
+  </div>
+  <div class="action-bar-right">
+    <button class="btn btn-outline" onclick="showToast('← 트렌드 분석으로 이동')">← 이전</button>
+    <button class="btn btn-orange" onclick="showToast('→ 시뮬레이션 화면으로 이동 (Screen 4 구현 예정)')">시뮬레이션으로 이동 →</button>
+  </div>
+</div>
+
+<div class="toast" id="toast-el"></div>
+
+<script>
+// ══════════════════════════════════════════
+// MODEL PARAMETERS (simulated identification result)
+// ══════════════════════════════════════════
+let MODEL = { kp:0.824, tau:3.21, theta:1.05, r2:0.943, rmse:0.38 };
+let LAMBDA = 6.42;
+let METHOD = 'imc';
+let DCS = 'honeywell';
+
+// ══════════════════════════════════════════
+// DCS PARAMETER DEFINITIONS
+// ══════════════════════════════════════════
+const DCS_DEFS = {
+  honeywell: {
+    name:'Honeywell Experion PKS',
+    params:[
+      {key:'P', dcsName:'GAIN',  unit:'(무단위)',         prev:1.50},
+      {key:'I', dcsName:'RSET',  unit:'min/rep',          prev:3.20},
+      {key:'D', dcsName:'RATE',  unit:'min',               prev:0.00},
+    ]
+  },
+  yokogawa: {
+    name:'Yokogawa CENTUM VP',
+    params:[
+      {key:'P', dcsName:'P (%)', unit:'%  (Kp=100/P)',    prev:55.0},
+      {key:'I', dcsName:'Ti',    unit:'min',               prev:3.50},
+      {key:'D', dcsName:'Td',    unit:'min',               prev:0.00},
+    ]
+  },
+  deltav: {
+    name:'Emerson DeltaV',
+    params:[
+      {key:'P', dcsName:'GAIN',  unit:'(무단위)',          prev:1.50},
+      {key:'I', dcsName:'RESET', unit:'sec/repeat',        prev:192},
+      {key:'D', dcsName:'RATE',  unit:'sec',               prev:0},
+    ]
+  },
+  abb: {
+    name:'ABB 800xA',
+    params:[
+      {key:'P', dcsName:'KP',    unit:'(무단위)',          prev:1.50},
+      {key:'I', dcsName:'TI',    unit:'sec',               prev:210},
+      {key:'D', dcsName:'TD',    unit:'sec',               prev:0},
+    ]
+  },
+};
+
+// ══════════════════════════════════════════
+// CALCULATE PID (standard Kc, Ti, Td in minutes)
+// ══════════════════════════════════════════
+function calcPID(method, kp, tau, theta, lam) {
+  let Kc, Ti, Td;
+  switch(method) {
+    case 'imc':
+      Kc = (tau + theta/2) / (kp*(lam + theta/2));
+      Ti = tau + theta/2;
+      Td = (tau*theta/2)/(tau + theta/2);
+      break;
+    case 'lambda':
+      Kc = tau / (kp*(lam + theta));
+      Ti = tau;
+      Td = 0;
+      break;
+    case 'zn':
+      Kc = 1.2*tau/(kp*theta);
+      Ti = 2*theta;
+      Td = 0.5*theta;
+      break;
+    case 'itae':
+      Kc = (0.965/kp)*Math.pow(theta/tau,-0.85);
+      Ti = tau/(0.796 - 0.1465*(theta/tau));
+      Td = 0.308*tau*Math.pow(theta/tau,0.929);
+      break;
+    case 'cc':
+      const r=theta/tau;
+      Kc = (1/kp)*((16+3*r)/(12*r));
+      Ti = theta*(32+6*r)/(13+8*r);
+      Td = 4*theta/(11+2*r);
+      break;
+    default:
+      Kc=1.2; Ti=3.0; Td=0.5;
+  }
+  return {Kc:+Kc.toFixed(4), Ti:+Ti.toFixed(4), Td:+Td.toFixed(4)};
+}
+
+// ══════════════════════════════════════════
+// CONVERT TO DCS-SPECIFIC UNITS
+// ══════════════════════════════════════════
+function toDCS(dcs, Kc, Ti, Td) {
+  switch(dcs) {
+    case 'honeywell':
+      return [Kc, Ti, Td]; // GAIN=Kc, RSET=Ti(min/rep), RATE=Td(min)
+    case 'yokogawa':
+      return [+(100/Kc).toFixed(2), Ti, Td]; // P% = 100/Kc
+    case 'deltav':
+      return [Kc, +(Ti*60).toFixed(1), +(Td*60).toFixed(1)]; // sec
+    case 'abb':
+      return [Kc, +(Ti*60).toFixed(1), +(Td*60).toFixed(1)]; // sec
+  }
+}
+
+// ══════════════════════════════════════════
+// RENDER DCS PARAMS
+// ══════════════════════════════════════════
+function renderDCSParams() {
+  const {Kc,Ti,Td} = calcPID(METHOD, MODEL.kp, MODEL.tau, MODEL.theta, LAMBDA);
+  const vals = toDCS(DCS, Kc, Ti, Td);
+  const def = DCS_DEFS[DCS];
+  document.getElementById('dcs-name-label').textContent = def.name;
+
+  const grid = document.getElementById('dcs-param-grid');
+  grid.innerHTML = def.params.map((p,i) => {
+    const v = +vals[i].toFixed(3);
+    const prev = p.prev;
+    const diff = v - prev;
+    const pct = prev!==0 ? (diff/Math.abs(prev)*100).toFixed(0) : '—';
+    const changed = Math.abs(diff) > 0.01;
+    const sign = diff>0?'+':'';
+    return `
+    <div class="dcs-param ${changed?'changed':''}">
+      <div class="dcs-param-key">${p.dcsName}</div>
+      <div class="dcs-param-val">${v}</div>
+      <div class="dcs-param-unit">${p.unit}</div>
+      <div class="dcs-param-prev">현재: ${prev}</div>
+      <div class="dcs-param-delta ${diff>0?'delta-up':'delta-dn'}">${sign}${(diff).toFixed(3)} (${sign}${pct}%)</div>
+    </div>`;
+  }).join('');
+
+  renderBasisSteps(Kc, Ti, Td);
+  renderCompareTable(vals, def, Kc, Ti, Td);
+}
+
+// ══════════════════════════════════════════
+// BASIS (calculation steps)
+// ══════════════════════════════════════════
+function renderBasisSteps(Kc, Ti, Td) {
+  const m=MODEL; const lam=LAMBDA;
+  document.getElementById('b-kp').textContent=m.kp;
+  document.getElementById('b-tau').textContent=m.tau;
+  document.getElementById('b-theta').textContent=m.theta;
+  document.getElementById('b-lambda').textContent=lam;
+
+  const steps = METHOD==='imc' ? [
+    {n:1, text:`IMC 이론에서 비례이득 Kc 계산:<br><span class="math">Kc = (τ + θ/2) / (Kp × (λ + θ/2))</span><br>= (${m.tau} + ${(m.theta/2).toFixed(3)}) / (${m.kp} × (${lam} + ${(m.theta/2).toFixed(3)}))<br>= <span class="result">${Kc}</span>`},
+    {n:2, text:`적분시간 Ti 계산:<br><span class="math">Ti = τ + θ/2</span><br>= ${m.tau} + ${(m.theta/2).toFixed(3)} = <span class="result">${Ti} min</span>`},
+    {n:3, text:`미분시간 Td 계산:<br><span class="math">Td = (τ × θ/2) / (τ + θ/2)</span><br>= (${m.tau} × ${(m.theta/2).toFixed(3)}) / ${Ti} = <span class="result">${Td} min</span>`},
+    {n:4, text:`DCS 변환 — ${DCS_DEFS[DCS].name}:<br>GAIN = Kc = <span class="result">${Kc}</span> | RSET = Ti = <span class="result">${Ti} min/rep</span> | RATE = Td = <span class="result">${Td} min</span>`},
+    {n:5, text:`λ = ${lam} min ≈ ${(lam/m.theta).toFixed(1)}× Dead Time. 권장 범위(2~5×θ)를 약간 초과하여 <strong>안정성 우선</strong> 설정입니다. 응답 속도를 높이려면 λ를 줄이세요.`}
+  ] : METHOD==='zn' ? [
+    {n:1, text:`Ziegler-Nichols Step Response 방법:<br><span class="math">Kc = 1.2 × τ / (Kp × θ)</span><br>= 1.2 × ${m.tau} / (${m.kp} × ${m.theta}) = <span class="result">${Kc}</span>`},
+    {n:2, text:`적분시간: <span class="math">Ti = 2 × θ</span> = 2 × ${m.theta} = <span class="result">${Ti} min</span>`},
+    {n:3, text:`미분시간: <span class="math">Td = 0.5 × θ</span> = 0.5 × ${m.theta} = <span class="result">${Td} min</span>`},
+    {n:4, text:`⚠ Z-N 방법은 빠른 응답을 제공하나 Overshoot 25% 이상 발생 가능. 공정 특성에 따라 Kc를 20~30% 줄이는 것을 권장합니다.`}
+  ] : [
+    {n:1, text:`선택된 Tuning Method: <strong>${METHOD}</strong>`},
+    {n:2, text:`Kc = <span class="result">${Kc}</span>, Ti = <span class="result">${Ti} min</span>, Td = <span class="result">${Td} min</span>`}
+  ];
+
+  document.getElementById('basis-steps').innerHTML = steps.map(s=>`
+    <div class="basis-step">
+      <div class="basis-num">${s.n}</div>
+      <div class="basis-text">${s.text}</div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════
+// COMPARE TABLE
+// ══════════════════════════════════════════
+function renderCompareTable(vals, def, Kc, Ti, Td) {
+  const tbody = document.getElementById('compare-tbody');
+  if(!tbody)return;
+  tbody.innerHTML = def.params.map((p,i)=>{
+    const v=+vals[i].toFixed(3), prev=p.prev;
+    const diff=v-prev, pct=prev!==0?(diff/Math.abs(prev)*100).toFixed(0):'—';
+    const sign=diff>0?'+':'';
+    const cls=diff>0?'improve-up':'improve-dn';
+    return `<tr>
+      <td>${p.key} (비례/적분/미분)</td>
+      <td class="td-mono">${p.dcsName}</td>
+      <td><input type="number" value="${prev}" style="font-family:'JetBrains Mono',monospace;font-size:12px;border:1px solid #E0E0E0;border-radius:4px;padding:4px 7px;width:80px;outline:none" onchange="this.dataset.prev=this.value"></td>
+      <td class="td-new">${v}</td>
+      <td class="td-improve ${cls}">${sign}${diff.toFixed(3)}<br><span style="font-size:10px">${sign}${pct}%</span></td>
+      <td class="td-mono" style="color:#888">${p.unit}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+// MODEL FIT CHART
+// ══════════════════════════════════════════
+function buildFitChart() {
+  // Simulate step response from FOPDT
+  const N=60, dt=1;
+  const labels=[], pvMeas=[], pvModel=[], mvData=[];
+  let pv=120, mv=50;
+  const {kp,tau,theta}=MODEL;
+  for(let i=0;i<N;i++){
+    if(i===10)mv=62;
+    const noise=(Math.random()-.5)*.3;
+    const t_delay=Math.max(0,i-Math.round(theta/dt));
+    const mvDel=t_delay<10?50:62;
+    const pvM=120+kp*(mvDel-50)*(1-Math.exp(-i*dt/tau));
+    pvMeas.push(+(pv+noise).toFixed(2));
+    pvModel.push(+pvM.toFixed(2));
+    mvData.push(mv);
+    pv=pv+dt/tau*(kp*(mv-50)-(pv-120))+noise;
+    labels.push(i+'min');
+  }
+  const ctx=document.getElementById('fit-chart').getContext('2d');
+  new Chart(ctx,{
+    type:'line',
+    data:{
+      labels,
+      datasets:[
+        {label:'실측 PV',data:pvMeas,borderColor:'#2563EB',borderWidth:1.5,backgroundColor:'rgba(37,99,235,.05)',fill:true,pointRadius:0,tension:.3,yAxisID:'y'},
+        {label:'FOPDT 모델',data:pvModel,borderColor:'#FF6B2B',borderDash:[5,3],borderWidth:2,pointRadius:0,tension:.3,yAxisID:'y'},
+        {label:'MV',data:mvData,borderColor:'#059669',borderWidth:1.5,pointRadius:0,tension:.0,yAxisID:'y2'},
+      ]
+    },
+    options:{
+      animation:false,responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},tooltip:{
+        callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)}`}
+      }},
+      scales:{
+        x:{grid:{color:'#F0F0F0'},ticks:{font:{size:9},color:'#aaa',maxTicksLimit:8}},
+        y:{grid:{color:'#F0F0F0'},ticks:{font:{family:"'JetBrains Mono',monospace",size:9},color:'#aaa'},title:{display:true,text:'°C',font:{size:9},color:'#aaa'}},
+        y2:{position:'right',grid:{display:false},ticks:{font:{size:9},color:'#aaa'},title:{display:true,text:'%MV',font:{size:9},color:'#aaa'},min:0,max:100}
+      }
+    }
+  });
+}
+
+// ══════════════════════════════════════════
+// EVENTS
+// ══════════════════════════════════════════
+function onLambda(v){
+  LAMBDA=+v;
+  document.getElementById('lambda-val').textContent=v;
+  document.getElementById('lambda-hint').textContent=`= ${(LAMBDA/MODEL.theta).toFixed(1)}× θ &nbsp; 권장: 2~5× Dead Time`;
+  document.getElementById('b-lambda').textContent=v;
+  renderDCSParams(); updateUncertainty();
+}
+
+function selectMethod(m, el){
+  METHOD=m;
+  document.querySelectorAll('.method-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('lambda-row').style.display=(m==='imc'||m==='lambda')?'flex':'none';
+  const methodNames={imc:'IMC (Internal Model Control)',lambda:'Lambda / Dahlin',zn:'Ziegler-Nichols Step Response',itae:'ITAE 최적화',cc:'Cohen-Coon',manual:'수동 입력'};
+  document.getElementById('b-method').textContent=methodNames[m]||m;
+  renderDCSParams();
+  showToast('✅ '+methodNames[m]+' 방법 선택됨');
+}
+
+function recalc(){
+  DCS=document.getElementById('dcs-sel').value;
+  renderDCSParams();
+  showToast('✅ '+DCS_DEFS[DCS].name+' 형식으로 변환됨');
+}
+
+function switchTab(name, el){
+  ['model','pid','compare'].forEach(t=>document.getElementById('tab-'+t).style.display='none');
+  document.getElementById('tab-'+name).style.display='block';
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function toggleBasis(el){
+  const body=document.getElementById('basis-body');
+  const open=body.classList.toggle('open');
+  document.getElementById('basis-arrow').textContent=open?'▴':'▾';
+  el.querySelector('#basis-arrow').textContent=open?'▴':'▾';
+}
+
+function updateUncertainty(){
+  const r2=MODEL.r2; const bar=document.getElementById('unc-bar');
+  const badge=document.getElementById('unc-badge');
+  let cls,icon,text,badgeText;
+  if(r2>=0.9){cls='ub-high';icon='🟢';badgeText='높음';
+    text=`<strong>모델 신뢰도 높음</strong> — R² = ${r2}. 추천 PID 파라미터의 신뢰도는 높습니다.`;}
+  else if(r2>=0.75){cls='ub-mid';icon='🟡';badgeText='보통';
+    text=`<strong>모델 신뢰도 보통</strong> — R² = ${r2}. 파라미터 범위(±15%)를 감안하여 적용 후 현장에서 미세조정하세요.`;}
+  else{cls='ub-low';icon='🔴';badgeText='낮음';
+    text=`<strong>모델 신뢰도 낮음</strong> — R² = ${r2}. 구간 재선택 또는 데이터 품질 개선 후 재분석을 권장합니다.`;}
+  bar.className='uncertainty-bar '+cls;
+  bar.innerHTML=`<span class="ub-icon">${icon}</span><div class="ub-text">${text}</div><span class="ub-badge">${badgeText}</span>`;
+}
+
+function runIdentification(){showToast('🔄 모델 식별 재실행 중...');}
+function exportReport(){showToast('📄 보고서 생성 중... (PDF 출력 예정)');}
+
+// ── Init ──────────────────────────────────
+window.addEventListener('load',()=>{
+  buildFitChart();
+  renderDCSParams();
+});
+
+let _tt;
+function showToast(msg){
+  const el=document.getElementById('toast-el');
+  el.textContent=msg;el.classList.add('show');
+  clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),2800);
+}
+</script>
+</body>
+</html>

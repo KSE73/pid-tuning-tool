@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PID Tuning Tool — 공식 레퍼런스</title>
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --accent: #FF6B2B;
+    --accent-light: #fff3ed;
+    --bg: #f8f9fb;
+    --sidebar-w: 220px;
+    --text: #1a1e2e;
+    --sub: #6b7280;
+    --border: #e5e7eb;
+    --card: #ffffff;
+    --code-bg: #1a1e2e;
+    --code-text: #e2e8f0;
+    --green: #10b981;
+    --blue: #3b82f6;
+    --purple: #8b5cf6;
+    --yellow: #f59e0b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Pretendard', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  /* ── Top Navbar ── */
+  .navbar {
+    height: 52px;
+    background: #1a1e2e;
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 1px 4px rgba(0,0,0,.3);
+  }
+  .navbar .logo {
+    display: flex; align-items: center; gap: 8px;
+    color: white; font-weight: 700; font-size: 15px;
+  }
+  .navbar .logo-icon {
+    width: 28px; height: 28px; background: var(--accent);
+    border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    font-size: 13px; color: white;
+  }
+  .navbar .sep { color: #4b5563; margin: 0 4px; }
+  .navbar .subtitle { color: #9ca3af; font-size: 13px; font-weight: 400; }
+  .navbar .pill {
+    margin-left: auto; background: rgba(255,107,43,.15);
+    color: var(--accent); font-size: 11px; font-weight: 600;
+    padding: 3px 10px; border-radius: 20px; border: 1px solid rgba(255,107,43,.3);
+    letter-spacing: 0.04em;
+  }
+
+  /* ── Layout ── */
+  .layout { display: flex; flex: 1; }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: var(--sidebar-w);
+    background: white;
+    border-right: 1px solid var(--border);
+    padding: 20px 0;
+    position: sticky;
+    top: 52px;
+    height: calc(100vh - 52px);
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+  .sidebar-section { margin-bottom: 4px; }
+  .sidebar-label {
+    font-size: 10px; font-weight: 700; color: var(--sub);
+    letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 8px 16px 4px;
+  }
+  .sidebar-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 16px; font-size: 13px; color: #374151;
+    cursor: pointer; text-decoration: none;
+    transition: background .15s, color .15s;
+    border-left: 3px solid transparent;
+  }
+  .sidebar-item:hover { background: #f3f4f6; color: var(--text); }
+  .sidebar-item.active {
+    background: var(--accent-light); color: var(--accent);
+    border-left-color: var(--accent); font-weight: 600;
+  }
+  .sidebar-item .num {
+    font-size: 10px; background: #e5e7eb; color: var(--sub);
+    border-radius: 10px; padding: 1px 6px; font-weight: 600;
+    margin-left: auto;
+  }
+  .sidebar-item.active .num { background: rgba(255,107,43,.15); color: var(--accent); }
+
+  /* ── Main Content ── */
+  .main {
+    flex: 1;
+    padding: 32px 40px;
+    max-width: 900px;
+    overflow-x: hidden;
+  }
+
+  .page-header { margin-bottom: 32px; }
+  .page-title { font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .page-desc { font-size: 14px; color: var(--sub); line-height: 1.7; }
+
+  /* ── Sections ── */
+  .section { margin-bottom: 48px; scroll-margin-top: 72px; }
+
+  .section-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 20px; padding-bottom: 12px;
+    border-bottom: 2px solid var(--border);
+  }
+  .section-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+  .section-title { font-size: 17px; font-weight: 700; color: var(--text); }
+  .section-tag {
+    font-size: 11px; font-weight: 600; padding: 2px 8px;
+    border-radius: 4px; margin-left: auto;
+  }
+
+  /* ── Formula Card ── */
+  .formula-card {
+    background: white; border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px 24px;
+    margin-bottom: 16px;
+    transition: box-shadow .15s;
+  }
+  .formula-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,.07); }
+
+  .formula-name {
+    font-size: 13px; font-weight: 700; color: var(--text);
+    margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
+  }
+  .formula-name .badge {
+    font-size: 10px; font-weight: 600; padding: 2px 7px;
+    border-radius: 4px;
+  }
+
+  /* ── Math Block (styled equation) ── */
+  .math-block {
+    background: var(--code-bg); border-radius: 8px;
+    padding: 14px 20px; margin: 10px 0;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 15px; color: var(--code-text);
+    overflow-x: auto; line-height: 2;
+  }
+  .math-block .eq { display: block; }
+  .math-block .var { color: #93c5fd; }   /* blue - variable */
+  .math-block .val { color: #86efac; }   /* green - constant */
+  .math-block .op  { color: #fbbf24; }   /* yellow - operator */
+  .math-block .paren { color: #f9a8d4; } /* pink - parens */
+  .math-block .comment { color: #6b7280; font-size: 12px; font-style: italic; }
+  .math-block .frac { display: inline-flex; flex-direction: column; text-align: center; vertical-align: middle; }
+  .math-block .num-f { border-bottom: 1px solid var(--code-text); padding: 0 4px; line-height: 1.3; }
+  .math-block .den-f { padding: 0 4px; line-height: 1.3; }
+
+  /* ── Param Grid ── */
+  .param-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 10px; margin-top: 12px;
+  }
+  .param-item {
+    background: #f8f9fb; border-radius: 8px; padding: 10px 12px;
+    border: 1px solid var(--border);
+  }
+  .param-item .param-sym {
+    font-family: 'Georgia', serif; font-size: 14px;
+    font-weight: 600; color: var(--accent); margin-bottom: 2px;
+  }
+  .param-item .param-desc { font-size: 11px; color: var(--sub); line-height: 1.5; }
+
+  /* ── DCS Table ── */
+  .dcs-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; }
+  .dcs-table th {
+    background: #f3f4f6; font-weight: 600; color: var(--sub);
+    padding: 8px 12px; text-align: left; border: 1px solid var(--border);
+  }
+  .dcs-table td { padding: 8px 12px; border: 1px solid var(--border); }
+  .dcs-table tr:hover td { background: #fafafa; }
+  .dcs-table .mono { font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 12px; }
+  .dcs-table .badge-dcs {
+    display: inline-block; font-size: 10px; font-weight: 700;
+    padding: 1px 6px; border-radius: 4px;
+  }
+  .hw  { background: #fef3c7; color: #92400e; }
+  .yok { background: #dbeafe; color: #1e40af; }
+  .dv  { background: #dcfce7; color: #166534; }
+  .abb { background: #f3e8ff; color: #6b21a8; }
+
+  /* ── Note box ── */
+  .note-box {
+    background: #fffbeb; border: 1px solid #fde68a;
+    border-radius: 8px; padding: 12px 16px; font-size: 13px;
+    color: #78350f; margin: 12px 0;
+    display: flex; gap: 10px; align-items: flex-start;
+  }
+  .note-box.info { background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
+  .note-box.green { background: #f0fdf4; border-color: #bbf7d0; color: #14532d; }
+
+  /* ── Method cards row ── */
+  .method-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 12px;
+  }
+  .method-mini {
+    background: white; border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .method-mini-title { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+  .method-mini-eq {
+    font-family: 'Georgia', serif; font-size: 13px; line-height: 2;
+    color: #374151;
+  }
+  .method-mini-eq span { color: var(--accent); font-weight: 600; }
+
+  .top-note {
+    background: white; border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 20px; margin-bottom: 24px; font-size: 13px; color: var(--sub);
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  @media print {
+    .sidebar { display: none; }
+    .main { max-width: 100%; padding: 20px; }
+    .navbar { position: static; }
+    .formula-card { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <div class="logo">
+    <div class="logo-icon">⚙</div>
+    PID Tuning Tool
+  </div>
+  <span class="sep">›</span>
+  <span class="subtitle">공식 레퍼런스 문서</span>
+  <span class="pill">Formula Reference v1.0</span>
+</nav>
+
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">프로세스 모델</div>
+      <a href="#fopdt" class="sidebar-item active">FOPDT 모델 <span class="num">4</span></a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">PID 제어기</div>
+      <a href="#pid-std" class="sidebar-item">PID 표준형 <span class="num">3</span></a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">튜닝 방법</div>
+      <a href="#imc" class="sidebar-item">IMC 튜닝 <span class="num">3</span></a>
+      <a href="#lambda" class="sidebar-item">Lambda (Dahlin) <span class="num">3</span></a>
+      <a href="#zn" class="sidebar-item">Ziegler-Nichols <span class="num">3</span></a>
+      <a href="#itae" class="sidebar-item">ITAE 최적화 <span class="num">3</span></a>
+      <a href="#cc" class="sidebar-item">Cohen-Coon <span class="num">3</span></a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">DCS 파라미터</div>
+      <a href="#dcs" class="sidebar-item">단위 변환 <span class="num">4</span></a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">성능 평가</div>
+      <a href="#perf" class="sidebar-item">성능 지표 <span class="num">5</span></a>
+      <a href="#model-quality" class="sidebar-item">모델 품질 <span class="num">3</span></a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">루프 진단</div>
+      <a href="#acf" class="sidebar-item">ACF / 진동 <span class="num">3</span></a>
+      <a href="#stiction" class="sidebar-item">Stiction 분석 <span class="num">2</span></a>
+      <a href="#snr" class="sidebar-item">SNR / 노이즈 <span class="num">2</span></a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">시뮬레이션</div>
+      <a href="#sim" class="sidebar-item">Euler 수치적분 <span class="num">3</span></a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+    <div class="page-header">
+      <div class="page-title">PID Tuning Tool — 사용 공식 레퍼런스</div>
+      <div class="page-desc">
+        본 문서는 PID Tuning Tool에서 모델 식별, 파라미터 추천, 시뮬레이션, 루프 진단에 사용되는<br>
+        핵심 수식과 그 이론적 배경, 적용 조건을 정리한 레퍼런스입니다.
+      </div>
+    </div>
+
+    <div class="top-note">
+      ℹ️ &nbsp;표기 규칙 — <strong>Kp</strong>: 프로세스 이득 &nbsp;|&nbsp; <strong>τ</strong>: 시정수 (min) &nbsp;|&nbsp; <strong>θ</strong>: 데드타임 (min) &nbsp;|&nbsp; <strong>λ</strong>: IMC/Lambda 튜닝 파라미터 (min) &nbsp;|&nbsp; <strong>r = θ/τ</strong>: 정규화 데드타임 비율
+    </div>
+
+
+    <!-- ───── 1. FOPDT ───── -->
+    <section class="section" id="fopdt">
+      <div class="section-header">
+        <div class="section-icon" style="background:#fff3ed">📐</div>
+        <div class="section-title">FOPDT 프로세스 모델</div>
+        <span class="section-tag" style="background:#fff3ed;color:var(--accent)">Process Identification</span>
+      </div>
+
+      <div class="formula-card">
+        <div class="formula-name">
+          전달함수 (Transfer Function)
+          <span class="badge" style="background:#fff3ed;color:var(--accent)">S-Domain</span>
+        </div>
+        <div class="math-block">
+          <span class="eq">G(s) = <span class="var">Kp</span> · <span class="op">e</span><sup>−<span class="var">θ</span>s</sup> / <span class="paren">(</span><span class="var">τ</span>s + 1<span class="paren">)</span></span>
+        </div>
+        <div class="param-grid">
+          <div class="param-item">
+            <div class="param-sym">Kp</div>
+            <div class="param-desc">프로세스 이득 (Process Gain)<br>ΔPV(steady) / ΔMV</div>
+          </div>
+          <div class="param-item">
+            <div class="param-sym">τ (tau)</div>
+            <div class="param-desc">시정수 (Time Constant)<br>스텝 응답에서 최종값의 63.2% 도달 시간</div>
+          </div>
+          <div class="param-item">
+            <div class="param-sym">θ (theta)</div>
+            <div class="param-desc">데드타임 (Dead Time / Delay)<br>MV 변화 후 PV가 반응하기 시작할 때까지 지연시간</div>
+          </div>
+          <div class="param-item">
+            <div class="param-sym">e<sup>−θs</span></sup></div>
+            <div class="param-desc">수송 지연 항 (Transport Delay)<br>순수 시간 지연을 라플라스 도메인에서 표현</div>
+          </div>
+        </div>
+        <div class="note-box info" style="margin-top:14px">
+          🔬 <strong>식별 방법:</strong> 스텝 응답(PRBS 또는 수동 MV 스텝) 데이터에 비선형 최소제곱법을 적용하여 Kp, τ, θ를 추정. R² ≥ 0.85 이상이면 신뢰성 있는 모델로 판단.
+        </div>
+      </div>
+
+      <div class="formula-card">
+        <div class="formula-name">Kp 추정 — 이득 계산</div>
+        <div class="math-block">
+          <span class="eq"><span class="var">Kp</span> = <span class="paren">(</span>PV<sub>final</sub> − PV<sub>initial</sub><span class="paren">)</span> / <span class="paren">(</span>MV<sub>final</sub> − MV<sub>initial</sub><span class="paren">)</span></span>
+          <span class="eq comment">※ 단위: [%PV / %MV] 또는 [EU / %]</span>
+        </div>
+      </div>
+
+      <div class="formula-card">
+        <div class="formula-name">τ, θ 추정 — 2점법 (Two-Point Method)</div>
+        <div class="math-block">
+          <span class="eq">t<sub>28</sub> = PV가 총 변화량의 <span class="val">28.3%</span>에 도달한 시각</span>
+          <span class="eq">t<sub>63</sub> = PV가 총 변화량의 <span class="val">63.2%</span>에 도달한 시각</span>
+          <span class="eq">τ = <span class="val">1.5</span> · <span class="paren">(</span>t<sub>63</sub> − t<sub>28</sub><span class="paren">)</span></span>
+          <span class="eq">θ = t<sub>63</sub> − τ</span>
+        </div>
+        <div class="note-box">
+          ⚡ 빠른 현장 추정용. 비선형 최소제곱법보다 정밀도가 낮지만, 노이즈가 많은 데이터에서 강건한 초기값 제공.
+        </div>
+      </div>
+
+      <div class="formula-card">
+        <div class="formula-name">정규화 데드타임 비율 (r)</div>
+        <div class="math-block">
+          <span class="eq"><span class="var">r</span> = θ / τ</span>
+          <span class="eq comment">r &lt; 0.3 : 제어 양호 (fast loop)  |  0.3 ≤ r &lt; 1.0 : 보통  |  r ≥ 1.0 : 어려운 루프 (Dead-time dominant)</span>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ───── 2. PID Standard ───── -->
+    <section class="section" id="pid-std">
+      <div class="section-header">
+        <div class="section-icon" style="background:#eff6ff">🎛</div>
+        <div class="section-title">PID 제어기 표준형</div>
+        <span class="section-tag" style="background:#eff6ff;color:#1d4ed8">ISA Standard</span>
+      </div>
+
+      <div class="formula-card">
+        <div class="formula-name">
+          병렬형 PID (Parallel Form)
+          <span class="badge" style="background:#eff6ff;color:#1d4ed8">Ideal</span>
+        </div>
+        <div class="math-block">
+          <span class="eq">u(t) = <span class="var">Kc</span> · <span class="paren">[</span> e(t) + <span class="op">(1/Ti)</span>∫e(t)dt + <span class="var">Td</span>·<span class="op">de(t)/dt</span> <span class="paren">]</span></span>
+          <span class="eq">e(t) = SP(t) − PV(t) <span class="comment">&nbsp;&nbsp;(오차 신호)</span></span>
+        </div>
+        <div class="param-grid">
+          <div class="param-item"><div class="param-sym">Kc</div><div class="param-desc">비례 이득 (Controller Gain)<br>단위: 무차원 또는 %/% </div></div>
+          <div class="param-item"><div class="param-sym">Ti</div><div class="param-desc">적분 시간 (Integral Time)<br>단위: min (또는 sec)</div></div>
+          <div class="param-item"><div class="param-sym">Td</div><div class="param-desc">미분 시간 (Derivative Time)<br>단위: min (또는 sec)</div></div>
+          <div class="param-item"><div class="param-sym">e(t)</div><div class="param-desc">오차 = SP − PV<br>실시간 편차 신호</div></div>
+        </div>
+      </div>
+
+      <div class="formula-card">
+        <div class="formula-name">Laplace 도메인 PID 전달함수</div>
+        <div class="math-block">
+          <span class="eq">C(s) = <span class="var">Kc</span> · <span class="paren">(</span>1 + <span class="op">1</span>/(<span class="var">Ti</span>·s) + <span class="var">Td</span>·s<span class="paren">)</span></span>
+        </div>
+      </div>
+
+      <div class="formula-card">
+        <div class="formula-name">직렬형 PID → 병렬형 변환 (Series ↔ Parallel)</div>
+        <div class="math-block">
+          <span class="eq comment">// 일부 DCS는 직렬형(실제형)을 사용함. 아래는 등가 변환식:</span>
+          <span class="eq">Kc<sub>parallel</sub> = Kc<sub>series</sub> · <span class="paren">(</span>1 + Td<sub>s</sub>/Ti<sub>s</sub><span class="paren">)</span></span>
+          <span class="eq">Ti<sub>parallel</sub> = Ti<sub>series</sub> · <span class="paren">(</span>1 + Td<sub>s</sub>/Ti<sub>s</sub><span class="paren">)</span></span>
+          <span class="eq">Td<sub>parallel</sub> = Ti<sub>series</sub> · Td<sub>series</sub> / <span class="paren">(</span>Ti<sub>series</sub> + Td<sub>series</sub><span class="paren">)</span></span>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ───── 3. IMC ───── -->
+    <section class="section" id="imc">
+      <div class="section-header">
+        <div class="section-icon" style="background:#f0fdf4">🎯</div>
+        <div class="section-title">IMC 튜닝 (Internal Model Control)</div>
+        <span class="section-tag" style="background:#f0fdf4;color:#166534">Morari & Zafiriou (1989)</span>
+      </div>
+
+      <div class="note-box green">
+        💡 <strong>IMC 원리:</strong> 내부에 프로세스 모델을 내장한 제어 구조에서 유도된 PID 파라미터. λ (closed-loop time constant)를 유일한 튜닝 파라미터로 사용하여 설계자가 응답 속도를 직관적으로 조절 가능.
+      </div>
+
+      <div class="formula-card">
+        <div class="formula-name">IMC-PID 튜닝 공식 (FOPDT 기반)</div>
+        <div class="math-block">
+          <span class="eq"><span class="var">Kc</span> = (τ + θ/2) / <span class="paren">[</span>Kp · <span class="paren">(</span>λ + θ/2<span class="paren">)</span><span class="paren">]</span></span>
+          <span class="eq"><span class="var">Ti</span> = τ + θ/2</span>
+          <span class="eq"><span class="var">Td</span> = (τ · θ/2) / (τ + θ/2)</span>
+        </div>
+        <div class="param-grid">
+          <div class="param-item"><div class="param-sym">λ</div><div class="param-desc">IMC 폐루프 시정수<br>권장: λ ≥ θ (최소 1.0×θ 이상)</div></div>
+          <div class="param-item"><div class="param-sym">λ 증가</div><div class="param-desc">느리고 안정적인 응답<br>로버스트 특성 향상</div></div>
+          <div class="param-item"><div class="param-sym">λ 감소</div><div class="param-desc">빠르고 공격적인 응답<br>과도응답 및 오실레이션 위험</div></div>
+        </div>
+        <div class="note-box">
+          ⚡ <strong>λ 선택 가이드:</strong> λ = θ (공격적), λ = 2θ (균형), λ = 4θ (보수적). 데드타임 지배 루프(r &gt; 0.5)에서 특히 유효.
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ───── 4. Lambda ───── -->
+    <section class="section" id="lambda">
+      <div class="section-header">
+        <div class="section-icon" style="background:#fdf4ff">λ</div>
+        <div class="section-title">Lambda (Dahlin) 튜닝</div>
+        <span class="section-tag" style="background:#fdf4ff;color:#7c3aed">Dahlin (1968)</span>
+      </div>
+
+      <div class="note-box" style="background:#fdf4ff;border-color:#e9d5ff;color:#6b21a8">
+        💡 <strong>Lambda 튜닝 원리:</strong> 폐루프 응답을 1차 지연 시스템(시정수 λ)으로 정의한 뒤 역으로 PID 파라미터를 도출. IMC와 유사하지만 미분 동작을 사용하지 않아 노이즈에 강건. 흐름량 제어(Flow Control), 압력 제어에 특히 적합.
+      </div>
+
+      <div class="formula-card">
+        <div class="formula-name">Lambda PI 튜닝 공식 (No Derivative)</div>
+        <div class="math-block">
+          <span class="eq"><span class="var">Kc</span> = τ / <span class="paren">[</span>Kp · <span class="paren">(</span>λ + θ<span class="paren">)</span><span class="paren">]</span></span>
+          <span class="eq"><span class="var">Ti</span> = τ</span>
+          <span class="eq"><span class="var">Td</span> = 0 <span class="comment">&nbsp;&nbsp;(PI only)</span></span>
+        </div>
+        <div class="note-box info">
+          ℹ️ Lambda 튜닝에서 Ti = τ (프로세스 시정수)로 고정되어, 적분 시간이 프로세스 특성을 자연스럽게 반영함. Kc만 λ로 조절.
+        </div>
+      </div>
+
+      <div class="formula-card">
+        <div class="formula-name">Multiple-loop Detuning Factor</div>
+        <div class="math-block">
+          <span class="eq">λ<sub>min</sub> = <span class="val">3</span>θ <span class="comment">&nbsp;&nbsp;(fast / 공격적)</span></span>
+          <span class="eq">λ<sub>rec</sub> = <span class="val">5</span>θ ~ <span class="val">10</span>θ <span class="comment">&nbsp;&nbsp;(cascade / 다중 루프 안정화 권장)</span></span>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ───── 5. Ziegler-Nichols ───── -->
+    <section class="section" id="zn">
+      <div class="section-header">
+        <div class="section-icon" style="background:#fff7ed">Z</div>
+        <div class="section-title">Ziegler-Nichols 스텝 응답법</div>
+        <span class="section-tag" style="background:#fff7ed;color:#c2410c">ZN (1942)</span>
+      </div>
+
+      <div class="note-box" style="background:#fff7ed;border-color:#fed7aa;color:#9a3412">
+        ⚠️ <strong>주의:</strong> ZN은 약 25% 오버슈트(Quarter Decay Ratio)를 허용하는 공격적 설계. 정유/화학 공정의 온도, 압력, 조성 루프에는 대부분 과도하게 공격적임. 초기 튜닝값 확인 또는 교육용 목적으로 주로 사용.
+      </div>
+
+      <div class="formula-card">
+        <div class="formula-name">ZN 스텝 응답 PID 튜닝 공식</div>
+        <div class="math-block">
+          <span class="eq"><span class="var">Kc</span> = 1.2 · τ / <span class="paren">(</span>Kp · θ<span class="paren">)</span></span>
+          <span class="eq"><span class="var">Ti</span> = 2 · θ</span>
+          <span class="eq"><span class="var">Td</span> = 0.5 · θ</span>
+        </div>
+        <div class="param-grid">
+          <div class="param-item"><div class="param-sym">PI only</div><div class="param-desc">Kc = 0.9τ/(Kp·θ)<br>Ti = 3θ, Td = 0</div></div>
+          <div class="param-item"><div class="param-sym">P only</div><div class="param-desc">Kc = τ/(Kp·θ)<br>Ti = ∞, Td = 0</div></div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ───── 6. ITAE ───── -->
+    <section class="section" id="itae">
+      <div class="section-header">
+        <div class="section-icon" style="background:#ecfdf5">∫</div>
+        <div class="section-title">ITAE 최적 튜닝</div>
+        <span class="section-tag" style="background:#ecfdf5;color:#065f46">Rovira (1969)</span>
+      </div>
+
+      <div class="note-box green">
+        💡 <strong>ITAE 원리:</strong> ITAE(Integral Time Absolute Error) = ∫t·|e(t)|dt 를 최소화하는 PID 파라미터를 수치적으로 도출. 초기 오차보다 장기 지속 오차에 더 큰 패널티를 부여하여 빠른 정착에 최적화.
+      </div>
+
+      <div class="formula-card">
+        <div class="formula-name">ITAE 기반 PID 공식 — SP 추종 (Setpoint Tracking)</div>
+        <div class="math-block">
+          <span class="eq"><span class="var">Kc</span> = <span class="paren">(</span><span class="val">0.965</span> / Kp<span class="paren">)</span> · <span class="paren">(</span>θ/τ<span class="paren">)</span><sup>−0.85</sup></span>
+          <span class="eq"><span class="var">Ti</span> = τ / <span class="paren">(</span><span class="val">0.796</span> − <span class="val">0.1465</span> · <span class="paren">(</span>θ/τ<span class="paren">)</span><span class="paren">)</span></span>
+          <span class="eq"><span class="var">Td</span> = <span class="val">0.308</span> · τ · <span class="paren">(</span>θ/τ<span class="paren">)</span><sup>0.929</sup></span>
+        </div>
+        <div class="note-box">
+          ℹ️ 유효 범위: 0.1 ≤ θ/τ ≤ 1.0. 이 범위를 벗어나면 IMC 또는 Lambda 사용 권장.
+        </div>
+      </div>
+
+      <div class="formula-card">
+        <div class="formula-name">ITAE 성능 지수 정의</div>
+        <div class="math-block">
+          <span class="eq">ITAE = ∫₀<sup>∞</sup> t · |e(t)| dt</span>
+          <span class="eq">IAE  = ∫₀<sup>∞</sup> |e(t)| dt <span class="comment">&nbsp;&nbsp;(단순 절대 오차 적분)</span></span>
+          <span class="eq">ISE  = ∫₀<sup>∞</sup> e²(t) dt <span class="comment">&nbsp;&nbsp;(제곱 오차 적분)</span></span>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ───── 7. Cohen-Coon ───── -->
+    <section class="section" id="cc">
+      <div class="section-header">
+        <div class="section-icon" style="background:#fef2f2">C</div>
+        <div class="section-title">Cohen-Coon 튜닝</div>
+        <span class="section-tag" style="background:#fef2f2;color:#991b1b">Cohen & Coon (1953)</span>
+      </div>
+
+      <div class="note-box" style="background:#fef2f2;border-color:#fecaca;color:#7f1d1d">
+        ⚠️ r = θ/τ가 큰 경우(데드타임 지배 루프)에 적합하도록 설계된 고전적 방법. r &gt; 0.3 루프에서 ZN보다 나은 성능을 제공하나, 오버슈트가 여전히 크다. 계단 교란 대응에 적합.
+      </div>
+
+      <div class="formula-card">
+        <div class="formula-name">Cohen-Coon PID 공식 (r = θ/τ 사용)</div>
+        <div class="math-block">
+          <span class="eq">r = θ / τ</span>
+          <span class="eq"><span class="var">Kc</span> = <span class="paren">(</span>1/Kp<span class="paren">)</span> · <span class="paren">(</span>16 + 3r<span class="paren">)</span> / <span class="paren">(</span>12r<span class="paren">)</span></span>
+          <span class="eq"><span class="var">Ti</span> = θ · <span class="paren">(</span>32 + 6r<span class="paren">)</span> / <span class="paren">(</span>13 + 8r<span class="paren">)</span></span>
+          <span class="eq"><span class="var">Td</span> = 4θ / <span class="paren">(</span>11 + 2r<span class="paren">)</span></span>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ───── 8. DCS 변환 ───── -->
+    <section class="section" id="dcs">
+      <div class="section-header">
+        <div class="section-icon" style="background:#f0fdf4">🖥</div>
+        <div class="section-title">DCS 파라미터 단위 변환</div>
+        <span class="section-tag" style="background:#f0fdf4;color:#166534">Vendor-Specific</span>
+      </div>
+
+      <div class="note-box green">
+        💡 DCS 벤더마다 PID 파라미터의 <strong>이름, 단위, 표현 방식</strong>이 상이함. 튜닝 공식 결과(Kc, Ti, Td)를 각 DCS에 입력 가능한 형태로 반드시 변환해야 함.
+      </div>
+
+      <div class="formula-card">
+        <div class="formula-name">벤더별 파라미터 변환표</div>
+        <table class="dcs-table">
+          <thead>
+            <tr>
+              <th>DCS 플랫폼</th>
+              <th>비례 이득 파라미터</th>
+              <th>적분 파라미터</th>
+              <th>미분 파라미터</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="badge-dcs hw">Honeywell Experion</span></td>
+              <td class="mono">GAIN = Kc</td>
+              <td class="mono">RSET (min/rep) = Ti</td>
+              <td class="mono">RATE (min) = Td</td>
+            </tr>
+            <tr>
+              <td><span class="badge-dcs yok">Yokogawa CENTUM VP</span></td>
+              <td class="mono">P (%) = 100 / Kc</td>
+              <td class="mono">Ti (min) = Ti</td>
+              <td class="mono">Td (min) = Td</td>
+            </tr>
+            <tr>
+              <td><span class="badge-dcs dv">Emerson DeltaV</span></td>
+              <td class="mono">GAIN = Kc</td>
+              <td class="mono">RESET (sec/rep) = Ti×60</td>
+              <td class="mono">RATE (sec) = Td×60</td>
+            </tr>
+            <tr>
+              <td><span class="badge-dcs abb">ABB 800xA</span></td>
+              <td class="mono">KP = Kc</td>
+              <td class="mono">TI (sec) = Ti×60</td>
+              <td class="mono">TD (sec) = Td×60</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="formula-card">
+        <div class="formula-name">Yokogawa 비례대(P%) ↔ Kc 변환</div>
+        <div class="math-block">
+          <span class="eq"><span class="var">P (%)</span> = 100 / Kc <span class="comment">&nbsp;&nbsp;(Proportional Band)</span></span>
+          <span class="eq"><span class="var">Kc</span> = 100 / P(%)</span>
+          <span class="eq comment">예: Kc = 2.0 → P = 50%,  Kc = 0.5 → P = 200%</span>
+        </div>
+        <div class="note-box">
+          ⚠️ Yokogawa에서 P(%)가 <strong>클수록</strong> 제어기가 더 느리고 둔감(낮은 이득). Honeywell/DeltaV의 GAIN과 반대 방향으로 작동.
+        </div>
+      </div>
+
+      <div class="formula-card">
+        <div class="formula-name">Integral 단위 변환 (min ↔ sec/rep)</div>
+        <div class="math-block">
+          <span class="eq">RESET [sec/rep] = Ti [min] × 60</span>
+          <span class="eq">RSET  [min/rep] = Ti [min] <span class="comment">&nbsp;&nbsp;(직접 입력 — Honeywell)</span></span>
+          <span class="eq comment">※ "rep" = repeat = 반복. min/rep = 적분 동작이 비례 동작만큼 보충하는 데 걸리는 시간</span>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ───── 9. Performance ───── -->
+    <section class="section" id="perf">
+      <div class="section-header">
+        <div class="section-icon" style="background:#eff6ff">📊</div>
+        <div class="section-title">폐루프 성능 지표</div>
+        <span class="section-tag" style="background:#eff6ff;color:#1d4ed8">Performance Metrics</span>
+      </div>
+
+      <div class="method-row">
+        <div class="method-mini">
+          <div class="method-mini-title">Rise Time (상승 시간)</div>
+          <div class="method-mini-eq">
+            PV가 SP 변화량의<br>
+            <span>10% → 90%</span>에 도달하는 시간<br>
+            <em style="font-size:11px;color:#6b7280">단위: min</em>
+          </div>
+        </div>
+        <div class="method-mini">
+          <div class="method-mini-title">Overshoot (오버슈트)</div>
+          <div class="method-mini-eq">
+            OS (%) = <span>(PV<sub>max</sub> − SP) / ΔSP</span> × 100<br>
+            <em style="font-size:11px;color:#6b7280">목표: &lt; 5% (대부분의 공정)</em>
+          </div>
+        </div>
+        <div class="method-mini">
+          <div class="method-mini-title">Settling Time (정착 시간)</div>
+          <div class="method-mini-eq">
+            PV가 <span>SP ± 5%</span> (또는 ±2%)<br>
+            밴드 내에 영구히 진입한 시간<br>
+            <em style="font-size:11px;color:#6b7280">단위: min</em>
+          </div>
+        </div>
+        <div class="method-mini">
+          <div class="method-mini-title">IAE (Integral Absolute Error)</div>
+          <div class="method-mini-eq">
+            IAE = <span>∫|SP − PV| dt</span><br>
+            작을수록 추종 성능 우수<br>
+            <em style="font-size:11px;color:#6b7280">단위: %·min</em>
+          </div>
+        </div>
+        <div class="method-mini">
+          <div class="method-mini-title">ISE (Integral Squared Error)</div>
+          <div class="method-mini-eq">
+            ISE = <span>∫(SP − PV)² dt</span><br>
+            큰 오차에 가중 패널티<br>
+            <em style="font-size:11px;color:#6b7280">단위: %²·min</em>
+          </div>
+        </div>
+        <div class="method-mini">
+          <div class="method-mini-title">Decay Ratio (감쇠비)</div>
+          <div class="method-mini-eq">
+            DR = <span>A₂ / A₁</span><br>
+            연속 오버슈트 피크 비율<br>
+            <em style="font-size:11px;color:#6b7280">권장: DR &lt; 0.25 (QDR)</em>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ───── 10. Model Quality ───── -->
+    <section class="section" id="model-quality">
+      <div class="section-header">
+        <div class="section-icon" style="background:#fdf4ff">🔍</div>
+        <div class="section-title">모델 품질 지표</div>
+        <span class="section-tag" style="background:#fdf4ff;color:#7c3aed">Model Validation</span>
+      </div>
+
+      <div class="formula-card">
+        <div class="formula-name">R² — 결정계수 (Coefficient of Determination)</div>
+        <div class="math-block">
+          <span class="eq">R² = 1 − SS<sub>res</sub> / SS<sub>tot</sub></span>
+          <span class="eq">SS<sub>res</sub> = Σ(PV<sub>actual</sub> − PV<sub>model</sub>)²</span>
+          <span class="eq">SS<sub>tot</sub> = Σ(PV<sub>actual</sub> − PV̄<sub>actual</sub>)²</span>
+          <span class="eq comment">R² = 1.0 : 완벽한 모델  |  R² &gt; 0.95 : 우수  |  R² &gt; 0.85 : 허용  |  R² &lt; 0.80 : 재식별 권장</span>
+        </div>
+      </div>
+
+      <div class="formula-card">
+        <div class="formula-name">RMSE — 평균제곱근오차 (Root Mean Squared Error)</div>
+        <div class="math-block">
+          <span class="eq">RMSE = √<span class="paren">[</span> (1/n) · Σ(PV<sub>actual</sub> − PV<sub>model</sub>)² <span class="paren">]</span></span>
+          <span class="eq comment">단위: PV와 동일. 절대 오차 크기 평가에 사용.</span>
+        </div>
+      </div>
+
+      <div class="formula-card">
+        <div class="formula-name">SNR — 신호 대 잡음비 (Signal-to-Noise Ratio)</div>
+        <div class="math-block">
+          <span class="eq">SNR = ΔPV<sub>signal</sub> / σ<sub>noise</sub></span>
+          <span class="eq comment">σ_noise: 정상 상태 PV의 표준편차 (노이즈 추정)</span>
+          <span class="eq comment">SNR &gt; 5 : 식별 가능  |  SNR &lt; 3 : 노이즈 과다 — 재실험 권장</span>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ───── 11. ACF ───── -->
+    <section class="section" id="acf">
+      <div class="section-header">
+        <div class="section-icon" style="background:#fff7ed">〜</div>
+        <div class="section-title">ACF 기반 진동 감지</div>
+        <span class="section-tag" style="background:#fff7ed;color:#c2410c">Loop Oscillation</span>
+      </div>
+
+      <div class="formula-card">
+        <div class="formula-name">자기상관함수 (AutoCorrelation Function)</div>
+        <div class="math-block">
+          <span class="eq">ACF(k) = Σ[(e(t) − ē) · (e(t+k) − ē)] / Σ(e(t) − ē)²</span>
+          <span class="eq comment">e(t): 오차 신호 = SP − PV  |  k: lag (샘플링 수)  |  ē: 오차 평균</span>
+        </div>
+        <div class="note-box">
+          📌 <strong>진단 기준:</strong>
+          <br>• ACF(k)가 특정 lag에서 강한 음(−) 피크 후 주기적 패턴 → <strong>루프 진동</strong>
+          <br>• ACF가 느리게 감쇠 (ACF(1) &gt; 0.9) → <strong>느린 드리프트 또는 외란</strong>
+          <br>• ACF가 급격히 0으로 수렴 → <strong>화이트 노이즈 (정상 동작)</strong>
+        </div>
+      </div>
+
+      <div class="formula-card">
+        <div class="formula-name">진동 주기 추정</div>
+        <div class="math-block">
+          <span class="eq">T<sub>osc</sub> = 2 · k<sub>first_negative_peak</sub> · Δt</span>
+          <span class="eq comment">Δt: 샘플링 간격 (min)  |  첫 번째 음의 ACF 피크 위치에서 주기 추정</span>
+        </div>
+      </div>
+
+      <div class="formula-card">
+        <div class="formula-name">Oscillation Index (Harris Index 기반)</div>
+        <div class="math-block">
+          <span class="eq">η = σ²<sub>MVC</sub> / σ²<sub>actual</sub></span>
+          <span class="eq comment">σ²_MVC: 최소 분산 제어(MVC) 하에서 예측 분산  |  σ²_actual: 실제 PV 분산</span>
+          <span class="eq comment">η → 1.0 : 이상적 성능  |  η &lt; 0.5 : 성능 개선 여지 큼</span>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ───── 12. Stiction ───── -->
+    <section class="section" id="stiction">
+      <div class="section-header">
+        <div class="section-icon" style="background:#fefce8">📐</div>
+        <div class="section-title">Stiction 분석 — Lissajous 기법</div>
+        <span class="section-tag" style="background:#fefce8;color:#854d0e">Valve Stiction</span>
+      </div>
+
+      <div class="note-box" style="background:#fefce8;border-color:#fde68a;color:#78350f">
+        💡 <strong>Stiction (정지마찰):</strong> 밸브 내부 패킹의 마찰로 인해 MV 신호가 변해도 밸브가 즉시 움직이지 않는 현상. 결과적으로 PV가 지속적인 한 방향 진동(square wave)을 보임.
+      </div>
+
+      <div class="formula-card">
+        <div class="formula-name">Lissajous 플롯 (OP vs PV)</div>
+        <div class="math-block">
+          <span class="eq">X축: OP(t) — 컨트롤러 출력 (밸브 포지션 신호)</span>
+          <span class="eq">Y축: PV(t) — 프로세스 변수</span>
+          <span class="eq comment">Stiction 징후 → 타원이 아닌 기울어진 사각형 패턴 (parallelogram / box shape)</span>
+          <span class="eq comment">정상 → 타원형 (ellipse) 또는 직선 (linear)</span>
+        </div>
+      </div>
+
+      <div class="formula-card">
+        <div class="formula-name">Stiction 정량 추정 (Choudhury 방법)</div>
+        <div class="math-block">
+          <span class="eq">S = |OP<sub>deadband</sub>| + |OP<sub>slip</sub>|</span>
+          <span class="eq comment">S: Stiction Band (% OP 범위)  |  deadband: 반응 전 불감대  |  slip: 급격히 움직이는 양</span>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ───── 13. SNR ───── -->
+    <section class="section" id="snr">
+      <div class="section-header">
+        <div class="section-icon" style="background:#f0fdfa">📶</div>
+        <div class="section-title">SNR 및 데이터 품질</div>
+        <span class="section-tag" style="background:#f0fdfa;color:#0f766e">Data Quality</span>
+      </div>
+
+      <div class="formula-card">
+        <div class="formula-name">SNR — 신호 대 잡음비</div>
+        <div class="math-block">
+          <span class="eq">SNR [linear] = ΔPV / σ<sub>noise</sub></span>
+          <span class="eq">SNR [dB] = 20 · log₁₀<span class="paren">(</span>ΔPV / σ<sub>noise</sub><span class="paren">)</span></span>
+          <span class="eq comment">ΔPV: 스텝 응답 신호 크기 (최종값 − 초기값)  |  σ_noise: 정상상태 구간 PV 표준편차</span>
+        </div>
+      </div>
+
+      <div class="formula-card">
+        <div class="formula-name">스텝 응답 후보 구간 점수 (Score)</div>
+        <div class="math-block">
+          <span class="eq">Score = w₁·(ΔMV/<span class="val">5</span>) + w₂·(SNR/<span class="val">10</span>) + w₃·(length/τ)</span>
+          <span class="eq comment">w₁=0.4, w₂=0.4, w₃=0.2 (기본 가중치)</span>
+          <span class="eq comment">ΔMV ≥ 3% 이상이면 유효 스텝으로 인식</span>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ───── 14. Simulation ───── -->
+    <section class="section" id="sim">
+      <div class="section-header">
+        <div class="section-icon" style="background:#f0fdf4">⚙</div>
+        <div class="section-title">폐루프 수치 시뮬레이션</div>
+        <span class="section-tag" style="background:#f0fdf4;color:#166534">Euler Integration</span>
+      </div>
+
+      <div class="formula-card">
+        <div class="formula-name">FOPDT 프로세스 시뮬레이션 — Euler 1차 수치적분</div>
+        <div class="math-block">
+          <span class="eq comment">// dt = 0.1 min 고정 샘플링 간격</span>
+          <span class="eq comment">// 데드타임 버퍼: 원형 큐(circular buffer) 사용</span>
+          <span class="eq">MV<sub>delayed</sub>(t) = MV<span class="paren">(</span>t − θ<span class="paren">)</span> <span class="comment">&nbsp;&nbsp;(버퍼 크기 = round(θ/dt))</span></span>
+          <span class="eq">PV(t+dt) = PV(t) + dt · <span class="paren">[</span> <span class="paren">(</span>Kp · MV<sub>delayed</sub>(t) − PV(t)<span class="paren">)</span> / τ <span class="paren">]</span></span>
+        </div>
+      </div>
+
+      <div class="formula-card">
+        <div class="formula-name">PID 출력 계산 — 이산 시간 (Discrete Time)</div>
+        <div class="math-block">
+          <span class="eq">e(t) = SP(t) − PV(t)</span>
+          <span class="eq">I(t) = I(t−dt) + e(t) · dt <span class="comment">&nbsp;&nbsp;(적분 누적)</span></span>
+          <span class="eq">D(t) = <span class="paren">(</span>e(t) − e(t−dt)<span class="paren">)</span> / dt <span class="comment">&nbsp;&nbsp;(미분 근사)</span></span>
+          <span class="eq">MV(t) = Kc · <span class="paren">[</span>e(t) + I(t)/Ti + Td·D(t)<span class="paren">]</span></span>
+          <span class="eq">MV(t) = clamp<span class="paren">(</span>MV(t), 0%, 100%<span class="paren">)</span> <span class="comment">&nbsp;&nbsp;(Out-of-range 방지)</span></span>
+        </div>
+      </div>
+
+      <div class="formula-card">
+        <div class="formula-name">부하 외란 (Load Disturbance) 모델</div>
+        <div class="math-block">
+          <span class="eq">PV<sub>disturbance</sub>(t) = PV(t) + D<sub>amp</sub> · <span class="op">exp</span><span class="paren">(</span>−(t−t<sub>d</sub>)/τ<sub>d</sub><span class="paren">)</span></span>
+          <span class="eq comment">D_amp: 외란 크기 (기본값 = 5%PV)  |  τ_d: 외란 시정수 (기본값 = τ/3)</span>
+        </div>
+      </div>
+
+      <div class="note-box green">
+        ✅ <strong>시뮬레이션 시나리오:</strong>
+        <br>① <strong>SP 스텝</strong> — SP를 ΔSP(기본 10%)만큼 계단 변화
+        <br>② <strong>부하 교란</strong> — SP 고정, 외부 교란 인가 → 회복 성능 평가
+        <br>③ <strong>복합</strong> — SP 스텝 후 교란 동시 인가 → 최악 조건 시험
+      </div>
+    </section>
+
+
+    <!-- Footer -->
+    <div style="border-top:1px solid var(--border);padding-top:20px;margin-top:16px;color:var(--sub);font-size:12px;text-align:center">
+      PID Tuning Tool — Formula Reference &nbsp;|&nbsp; 정유/화학 공정 DCS 엔지니어링 &nbsp;|&nbsp; 2026
+      <br style="margin-bottom:4px">
+      주요 참고문헌: Seborg et al. "Process Dynamics and Control" 4th ed. &nbsp;|&nbsp; Smith & Corripio "Principles and Practice of Automatic Process Control" &nbsp;|&nbsp; ISA-5.9-2023
+    </div>
+
+  </main>
+</div>
+
+<script>
+  // Active sidebar highlighting on scroll
+  const sections = document.querySelectorAll('.section');
+  const sidebarItems = document.querySelectorAll('.sidebar-item');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.id;
+        sidebarItems.forEach(item => {
+          item.classList.toggle('active', item.getAttribute('href') === `#${id}`);
+        });
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+
+  sections.forEach(s => observer.observe(s));
+
+  // Smooth scroll
+  sidebarItems.forEach(item => {
+    item.addEventListener('click', e => {
+      e.preventDefault();
+      const target = document.querySelector(item.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+</script>
+</body>
+</html>
