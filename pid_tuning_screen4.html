@@ -155,13 +155,13 @@ input[type=range].slider{width:100%;accent-color:#FF6B2B;height:4px;cursor:point
 <body>
 
 <header class="g-topbar">
-  <a class="g-logo" href="index.html" style="cursor:pointer;text-decoration:none;"><div class="g-logo-icon">P</div><span class="g-logo-name">PID Tuning Tool</span></a>
+  <a class="g-logo"><div class="g-logo-icon">P</div><span class="g-logo-name">PID Tuning Tool</span></a>
   <nav class="g-nav">
-    <a class="g-nav-item" href="pid_tuning_screen1.html">데이터 관리</a>
-    <a class="g-nav-item pill" href="pid_tuning_screen3.html">Tuning 작업</a>
-    <a class="g-nav-item" href="pid_tuning_screen5.html">Loop 진단</a>
-    <a class="g-nav-item" href="pid_tuning_formulas.html">보고서</a>
-    <a class="g-nav-item" href="#">설정</a>
+    <a class="g-nav-item">데이터 관리</a>
+    <a class="g-nav-item pill">Tuning 작업</a>
+    <a class="g-nav-item">Loop 진단</a>
+    <a class="g-nav-item">보고서</a>
+    <a class="g-nav-item">설정</a>
   </nav>
   <div class="g-topbar-right">
     <button class="g-icon-btn">🔔</button>
@@ -176,34 +176,34 @@ input[type=range].slider{width:100%;accent-color:#FF6B2B;height:4px;cursor:point
     <div class="sb-section-header"><div class="sb-section-label"><span class="dot dot-orange"></span>작업함</div></div>
     <div class="sb-items">
       <a class="sb-item active">현재 작업</a>
-      <a class="sb-item">진행중</a>
-      <a class="sb-item">임시저장</a>
+      <a class="sb-item">진행중 <span class="sb-count">2</span></a>
+      <a class="sb-item">임시저장 <span class="sb-count">5</span></a>
     </div>
   </div>
   <div class="sb-divider"></div>
   <div class="sb-section">
     <div class="sb-section-header"><div class="sb-section-label"><span class="dot dot-blue"></span>Tuning 이력</div></div>
     <div class="sb-items">
-      <a class="sb-item">완료</a>
-      <a class="sb-item">검토대기</a>
+      <a class="sb-item">완료 <span class="sb-count">24</span></a>
+      <a class="sb-item">검토대기 <span class="sb-count">3</span></a>
     </div>
   </div>
   <div class="sb-divider"></div>
   <div class="sb-section">
     <div class="sb-section-header"><div class="sb-section-label"><span class="dot dot-green"></span>Loop 목록</div></div>
     <div class="sb-items">
-      <a class="sb-item">Temperature</a>
-      <a class="sb-item">Pressure</a>
-      <a class="sb-item">Flow</a>
-      <a class="sb-item">Level</a>
+      <a class="sb-item">Temperature <span class="sb-count">12</span></a>
+      <a class="sb-item">Pressure <span class="sb-count">8</span></a>
+      <a class="sb-item">Flow <span class="sb-count">15</span></a>
+      <a class="sb-item">Level <span class="sb-count">6</span></a>
     </div>
   </div>
   <div class="sb-divider"></div>
   <div class="sb-section">
     <div class="sb-section-header"><div class="sb-section-label"><span class="dot dot-purple"></span>진단함</div></div>
     <div class="sb-items">
-      <a class="sb-item" href="pid_tuning_screen5.html">Plant Triage</a>
-      <a class="sb-item">불량 Loop</a>
+      <a class="sb-item">Plant Triage <span class="sb-count">41</span></a>
+      <a class="sb-item">불량 Loop <span class="sb-count" style="background:#FEE2E2;color:#DC2626">7</span></a>
     </div>
   </div>
   <div class="sb-bottom">
@@ -215,15 +215,15 @@ input[type=range].slider{width:100%;accent-color:#FF6B2B;height:4px;cursor:point
 <main class="main">
 
   <div class="step-bar">
-    <a class="step-item done" href="pid_tuning_screen1.html" style="text-decoration:none;"><div class="step-circle">✓</div><span class="step-label">데이터 수집</span></a>
+    <div class="step-item done"><div class="step-circle">✓</div><span class="step-label">데이터 수집</span></div>
     <div class="step-sep done"></div>
-    <a class="step-item done" href="pid_tuning_screen2.html" style="text-decoration:none;"><div class="step-circle">✓</div><span class="step-label">트렌드 분석</span></a>
+    <div class="step-item done"><div class="step-circle">✓</div><span class="step-label">트렌드 분석</span></div>
     <div class="step-sep done"></div>
-    <a class="step-item done" href="pid_tuning_screen3.html" style="text-decoration:none;"><div class="step-circle">✓</div><span class="step-label">모델 식별·PID 추천</span></a>
+    <div class="step-item done"><div class="step-circle">✓</div><span class="step-label">모델 식별·PID 추천</span></div>
     <div class="step-sep done"></div>
-    <a class="step-item active" href="pid_tuning_screen4.html" style="text-decoration:none;"><div class="step-circle">4</div><span class="step-label">시뮬레이션</span></a>
+    <div class="step-item active"><div class="step-circle">4</div><span class="step-label">시뮬레이션</span></div>
     <div class="step-sep"></div>
-    <a class="step-item" href="pid_tuning_screen5.html" style="text-decoration:none;"><div class="step-circle">5</div><span class="step-label">Loop 진단</span></a>
+    <div class="step-item"><div class="step-circle">5</div><span class="step-label">Loop 진단</span></div>
   </div>
 
   <div class="page-title-row">
@@ -234,7 +234,7 @@ input[type=range].slider{width:100%;accent-color:#FF6B2B;height:4px;cursor:point
     <div style="display:flex;gap:8px">
       <button class="btn btn-outline btn-sm" onclick="resetToRecommended()">🔄 추천값으로 초기화</button>
       <button class="btn btn-outline btn-sm" onclick="exportChart()">📷 그래프 저장</button>
-      <button class="btn btn-orange btn-sm" onclick="location.href='pid_tuning_screen5.html'">Loop 진단으로 →</button>
+      <button class="btn btn-orange btn-sm" onclick="showToast('→ Loop 진단으로 이동')">Loop 진단으로 →</button>
     </div>
   </div>
 
@@ -247,7 +247,7 @@ input[type=range].slider{width:100%;accent-color:#FF6B2B;height:4px;cursor:point
     <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#555">Kp=0.824 · τ=3.21 · θ=1.05</span>
     <div style="width:1px;height:20px;background:#E8E8E8"></div>
     <span class="lbl">추천 (IMC · Honeywell)</span>
-    <span class="pv-chip chip-pid-new" id="rec-chip">— · — · —</span>
+    <span class="pv-chip chip-pid-new" id="rec-chip">GAIN=1.823 · RSET=3.74 · RATE=0.45</span>
     <div style="width:1px;height:20px;background:#E8E8E8"></div>
     <span class="lbl">현재</span>
     <span class="pv-chip chip-pid-cur" id="cur-chip">GAIN=1.50 · RSET=3.20 · RATE=0.00</span>
@@ -371,11 +371,11 @@ input[type=range].slider{width:100%;accent-color:#FF6B2B;height:4px;cursor:point
               <div class="slider-top">
                 <span class="slider-name">GAIN</span>
                 <div class="slider-vals">
-                  <span class="slider-val-new" id="sl-p-val">—</span>
-                  <span class="slider-val-rec" id="sl-p-rec">(추천: —)</span>
+                  <span class="slider-val-new" id="sl-p-val">1.823</span>
+                  <span class="slider-val-rec" id="sl-p-rec">(추천: 1.823)</span>
                 </div>
               </div>
-              <input type="range" class="slider" id="sl-p" min="0.1" max="5" step="0.001" value="1.0" oninput="onSlider('p',this.value)">
+              <input type="range" class="slider" id="sl-p" min="0.1" max="5" step="0.001" value="1.823" oninput="onSlider('p',this.value)">
               <div class="slider-limits"><span>0.1</span><span>5.0</span></div>
             </div>
           </div>
@@ -389,11 +389,11 @@ input[type=range].slider{width:100%;accent-color:#FF6B2B;height:4px;cursor:point
               <div class="slider-top">
                 <span class="slider-name">RSET</span>
                 <div class="slider-vals">
-                  <span class="slider-val-new" id="sl-i-val">—</span>
-                  <span class="slider-val-rec" id="sl-i-rec">(추천: —)</span>
+                  <span class="slider-val-new" id="sl-i-val">3.735</span>
+                  <span class="slider-val-rec" id="sl-i-rec">(추천: 3.735)</span>
                 </div>
               </div>
-              <input type="range" class="slider" id="sl-i" min="0.1" max="20" step="0.01" value="1.0" oninput="onSlider('i',this.value)">
+              <input type="range" class="slider" id="sl-i" min="0.1" max="20" step="0.01" value="3.735" oninput="onSlider('i',this.value)">
               <div class="slider-limits"><span>0.1</span><span>20</span></div>
             </div>
           </div>
@@ -407,11 +407,11 @@ input[type=range].slider{width:100%;accent-color:#FF6B2B;height:4px;cursor:point
               <div class="slider-top">
                 <span class="slider-name">RATE</span>
                 <div class="slider-vals">
-                  <span class="slider-val-new" id="sl-d-val">—</span>
-                  <span class="slider-val-rec" id="sl-d-rec">(추천: —)</span>
+                  <span class="slider-val-new" id="sl-d-val">0.447</span>
+                  <span class="slider-val-rec" id="sl-d-rec">(추천: 0.447)</span>
                 </div>
               </div>
-              <input type="range" class="slider" id="sl-d" min="0" max="5" step="0.001" value="0.0" oninput="onSlider('d',this.value)">
+              <input type="range" class="slider" id="sl-d" min="0" max="5" step="0.001" value="0.447" oninput="onSlider('d',this.value)">
               <div class="slider-limits"><span>0</span><span>5</span></div>
             </div>
           </div>
@@ -439,8 +439,8 @@ input[type=range].slider{width:100%;accent-color:#FF6B2B;height:4px;cursor:point
     <strong id="ab-summary">추천 PID 시뮬레이션 완료</strong> &nbsp;—&nbsp; 결과를 확인하고 Loop 진단으로 이동하세요.
   </div>
   <div class="action-bar-right">
-    <button class="btn btn-outline" onclick="location.href='pid_tuning_screen3.html'">← 이전</button>
-    <button class="btn btn-orange" onclick="location.href='pid_tuning_screen5.html'">Loop 진단으로 이동 →</button>
+    <button class="btn btn-outline" onclick="showToast('← 모델 식별·PID 추천으로 이동')">← 이전</button>
+    <button class="btn btn-orange" onclick="showToast('→ Loop 진단 화면으로 이동 (Screen 5 구현 예정)')">Loop 진단으로 이동 →</button>
   </div>
 </div>
 
@@ -450,13 +450,12 @@ input[type=range].slider{width:100%;accent-color:#FF6B2B;height:4px;cursor:point
 // ══════════════════════════════════════════
 // PROCESS & PID PARAMETERS
 // ══════════════════════════════════════════
-const PROC = { kp:null, tau:null, theta:null };  // Screen 3에서 전달
+let PROC = { kp:0.824, tau:3.21, theta:1.05 };
 
-const REC  = { p:null, i:null, d:null };   // 추천 PID (미입력)
-const CUR  = { p:0, i:0, d:0 };           // 현재 DCS 파라미터
+let REC  = { p:1.823, i:3.735, d:0.447 };   // p=Kc, i=Ti(min), d=Td(min)
+let CUR  = { p:1.500, i:3.200, d:0.000 };   // current DCS
 
-let TUNED  = { p:1.0, i:1.0, d:0.0 };    // 슬라이더 초기값
-let HAS_DATA = false;                      // 데이터 존재 여부
+let TUNED  = { p:1.823, i:3.735, d:0.447 };   // user-adjusted (starts = REC)
 let SCENARIO = 'sp';
 
 // ══════════════════════════════════════════
@@ -701,15 +700,62 @@ function resetToRecommended() {
 function exportChart() { showToast('📷 차트 이미지 저장 (구현 예정)'); }
 
 // ── Init ──────────────────────────────────
-window.addEventListener('load',()=>{
-  if(PROC.kp === null){
-    showEmptyState();
-  } else {
-    HAS_DATA = true;
-    initCharts();
-    redraw();
-  }
+window.addEventListener('load', () => {
+  // ── Load data from Screen 3 ──────────────────
+  try {
+    const payload = JSON.parse(sessionStorage.getItem('pidData') || '{}');
+    if (payload.model && payload.model.kp != null) {
+      PROC = { kp: payload.model.kp, tau: payload.model.tau, theta: payload.model.theta };
+    }
+    if (payload.rec && payload.rec.kc != null) {
+      const {kc, ti, td} = payload.rec;
+      REC   = { p: kc,  i: ti, d: td };
+      TUNED = { p: kc,  i: ti, d: td };
+      // Slider values
+      ['p','i','d'].forEach(k => {
+        const v = REC[k];
+        const el = document.getElementById('sl-'+k);
+        const valEl = document.getElementById('sl-'+k+'-val');
+        const recEl = document.getElementById('sl-'+k+'-rec');
+        if (el)    { el.value = v; el.max = Math.max(+el.max, v*3).toFixed(3); }
+        if (valEl) valEl.textContent = (+v).toFixed(3);
+        if (recEl) recEl.textContent = '(추천: '+(+v).toFixed(3)+')';
+      });
+    }
+    // DCS label update
+    if (payload.dcs) {
+      const dcsLabels = {
+        honeywell: { i:'Honeywell: RSET (rep/min)', d:'Honeywell: RATE (min)' },
+        yokogawa:  { i:'CENTUM VP: TI (sec)',        d:'CENTUM VP: TD (sec)' },
+        deltav:    { i:'DeltaV: RESET (sec/rep)',     d:'DeltaV: RATE (sec)' },
+        abb:       { i:'ABB 800xA: TI (sec)',         d:'ABB 800xA: TD (sec)' },
+      };
+      const lbl = dcsLabels[payload.dcs] || dcsLabels.honeywell;
+      const iLbl = document.getElementById('i-dcs-label');
+      const dLbl = document.getElementById('d-dcs-label');
+      if (iLbl) iLbl.textContent = lbl.i;
+      if (dLbl) dLbl.textContent = lbl.d;
+    }
+    // Source tag
+    if (payload.model) {
+      const m = payload.model;
+      const method = payload.method || '';
+      document.getElementById('ab-summary').textContent =
+        'FOPDT: Kp=' + (+m.kp).toFixed(3) + ', τ=' + (+m.tau).toFixed(2) +
+        ' min, θ=' + (+m.theta).toFixed(2) + ' min  |  방법: ' + method.toUpperCase();
+    }
+  } catch(e) { console.warn('Screen4 load error:', e); }
+
+  initCharts();
+  redraw();
 });
 
-function showEmptyState(){
-  const overlay = document.createEle
+let _tt;
+function showToast(msg){
+  const el=document.getElementById('toast-el');
+  el.textContent=msg;el.classList.add('show');
+  clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),2800);
+}
+</script>
+</body>
+</html>

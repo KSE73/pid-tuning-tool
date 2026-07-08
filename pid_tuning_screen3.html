@@ -521,7 +521,7 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
   </div>
   <div class="action-bar-right">
     <button class="btn btn-outline" onclick="showToast('← 트렌드 분석으로 이동')">← 이전</button>
-    <button class="btn btn-orange" onclick="showToast('→ 시뮬레이션 화면으로 이동 (Screen 4 구현 예정)')">시뮬레이션으로 이동 →</button>
+    <button class="btn btn-orange" onclick="goSim()">시뮬레이션으로 이동 →</button>
   </div>
 </div>
 
@@ -919,6 +919,28 @@ window.addEventListener('load',()=>{
   }
 });
 
+
+
+// ══════════════════════════════════════════
+// NAVIGATE TO SCREEN 4 — pass MODEL & PID
+// ══════════════════════════════════════════
+function goSim() {
+  if (MODEL.kp === null) {
+    showToast('⚠ 모델 식별 후 이동할 수 있습니다.');
+    return;
+  }
+  const {Kc, Ti, Td} = calcPID(METHOD, MODEL.kp, MODEL.tau, MODEL.theta, LAMBDA);
+  try {
+    const prev = JSON.parse(sessionStorage.getItem('pidData') || '{}');
+    prev.model  = { kp: MODEL.kp, tau: MODEL.tau, theta: MODEL.theta, r2: MODEL.r2, rmse: MODEL.rmse };
+    prev.rec    = { kc: Kc, ti: Ti, td: Td };   // standard units (min)
+    prev.method = METHOD;
+    prev.dcs    = DCS;
+    prev.lambda = LAMBDA;
+    sessionStorage.setItem('pidData', JSON.stringify(prev));
+  } catch(err) { console.warn('sim save fail:', err); }
+  location.href = 'pid_tuning_screen4.html';
+}
 
 let _tt;
 function showToast(msg){
