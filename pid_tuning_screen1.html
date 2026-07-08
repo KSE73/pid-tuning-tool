@@ -615,7 +615,7 @@ html, body { height: 100%; font-family: 'Pretendard', -apple-system, sans-serif;
       </div>
       <div class="sb-items">
         <a class="sb-item" href="pid_tuning_screen5.html">Plant Triage</a>
-        <a class="sb-item">불량 Loop</a>
+        <a class="sb-item">불량 Loop <span class="sb-count" style="background:#FEE2E2;color:#DC2626;">7</span></a>
       </div>
     </div>
 
@@ -814,45 +814,39 @@ function processFile(f) {
         const ws = wb.Sheets[wb.SheetNames[0]];
         const ref = XLSX.utils.decode_range(ws['!ref'] || 'A1');
 
-        // ── 헤더 행 자동 탐색 ──────────────────────────────────────
-        // 우선순위 1: 날짜/시간 키워드(날짜·시간·date·time)가 포함된 셀이 있는 행
-        // 우선순위 2: 직전 행까지 문자열, 이번 행부터 숫자/날짜 → 직전 행
+        // 헤더 행 자동 탐색: '날짜/시간/date/time' 키워드 셀이 있는 행 우선,
+        // 없으면 숫자/날짜 데이터 직전의 마지막 문자열 행 사용
         const DATE_KW = ['날짜','시간','date','time','timestamp','datetime'];
-        let headerRow = ref.s.r;
-        let lastStrRow = ref.s.r;
-        outer: for (let r = ref.s.r; r <= Math.min(ref.s.r + 25, ref.e.r); r++) {
+        let headerRow = ref.s.r, lastStrRow = ref.s.r, found = false;
+        for (let r = ref.s.r; r <= Math.min(ref.s.r + 25, ref.e.r) && !found; r++) {
           let strCnt=0, numCnt=0, dateCnt=0, totalCnt=0;
           for (let c = ref.s.c; c <= ref.e.c; c++) {
-            const cell = ws[XLSX.utils.encode_cell({r,c})];
+            const cell = ws[XLSX.utils.encode_cell({r, c})];
             if (!cell || cell.v == null) continue;
             totalCnt++;
             if (cell.t === 's') {
               strCnt++;
-              // 날짜 키워드 포함 셀 → 이 행이 헤더
               if (DATE_KW.some(k => cell.v.toLowerCase().includes(k))) {
-                headerRow = r; break outer;
+                headerRow = r; found = true; break;
               }
-            } else if (cell.t === 'd') { dateCnt++; }
-            else if (cell.t === 'n') { numCnt++; }
+            } else if (cell.t === 'd') dateCnt++;
+            else if (cell.t === 'n') numCnt++;
           }
+          if (found) break;
           if (totalCnt === 0) continue;
-          const strRatio = strCnt / totalCnt;
-          if (strRatio >= 0.5) { lastStrRow = r; }
-          // 숫자/날짜가 주인 행 → 이전 문자열 행이 헤더
+          if (strCnt / totalCnt >= 0.5) lastStrRow = r;
           else if ((numCnt + dateCnt) / totalCnt >= 0.5 && r > ref.s.r) {
             headerRow = lastStrRow; break;
           }
         }
 
-        // headerRow 기준으로 파싱
-        const allRows = XLSX.utils.sheet_to_json(ws, {defval:null, range:headerRow});
+        // 헤더 행 기준 파싱 (한 번만)
+        const allRows = XLSX.utils.sheet_to_json(ws, {defval: null, range: headerRow});
 
-        // 빈 행 + 값이 전부 문자열인 첫 행(설명 행) + Error 행 제거
+        // 숫자/날짜 값이 하나라도 있는 행만 남김 (빈 행·설명 행 제거)
         const clean = allRows.filter(row => {
           const vals = Object.values(row).filter(v => v != null && v !== '');
-          if (vals.length === 0) return false;
-          // 숫자 또는 Date 가 하나라도 있는 행만 남김
-          return vals.some(v => typeof v === 'number' || v instanceof Date);
+          return vals.length > 0 && vals.some(v => typeof v === 'number' || v instanceof Date);
         });
 
         loaded(clean, clean.length ? Object.keys(clean[0]) : [], f);
@@ -940,44 +934,40 @@ function renderQuality() {
 
 // ─── Mapping ─────────────────────────────────
 function autoDetect(role) {
-  if (!S.headers || S.headers.length === 0) return '';
-
-  // 1차: 헤더 이름 키워드 매칭
+  if (!S.headers || !S.headers.length) return '';
   const p = {
-    ts:   ['time','timestamp','datetime','date','시간','날짜'],
-    pv:   ['pv','process_var','.pv','_pv'],
-    mv:   ['mv','output','op','.mv','_mv','(co)','co)'],
-    sv:   ['sv','sp','setpoint','set_point','.sv','_sv','(sp)','sp)'],
-    mode: ['mode','status','상태','모드']
+    ts:  ['time','timestamp','datetime','date','시간','날짜'],
+    pv:  ['pv','process_var','pv_','_pv'],
+    mv:  ['mv','output','op','mv_','_mv','(co)','.mv'],
+    sv:  ['sv','setpoint','set_point','sv_','_sv','(sp)','.sv'],
+    mode:['mode','status','상태','모드']
   };
+  // 1차: 헤더 이름 키워드 매칭
   const byName = S.headers.find(h => (p[role]||[]).some(k => h.toLowerCase().includes(k)));
   if (byName) return byName;
 
-  // 2차: 컬럼 내용 분석 (헤더가 태그명 형식일 때)
-  if (!S.data || S.data.length === 0) return '';
+  // 2차: 컨텐츠 기반 (헤더가 태그명 형식일 때)
+  if (!S.data || !S.data.length) return '';
   const sample = S.data.slice(0, 20);
 
-  // 날짜 컬럼 탐색
+  // ts: Date 또는 날짜 문자열이 70% 이상인 컬럼
   const tsCol = S.headers.find(h => {
     const vals = sample.map(r => r[h]).filter(v => v != null);
-    if (vals.length === 0) return false;
-    const n = vals.filter(v => v instanceof Date || (typeof v === 'string' && !isNaN(Date.parse(v)))).length;
+    if (!vals.length) return false;
+    const n = vals.filter(v => v instanceof Date ||
+      (typeof v === 'string' && !isNaN(Date.parse(v)))).length;
     return n / vals.length > 0.7;
   }) || '';
-
   if (role === 'ts') return tsCol;
 
-  // 숫자 컬럼 목록 (날짜 컬럼 제외)
+  // pv/mv/sv: 숫자 컬럼을 순서대로 배정
   const numCols = S.headers.filter(h => {
     if (h === tsCol) return false;
     const vals = sample.map(r => r[h]).filter(v => v != null);
-    if (vals.length === 0) return false;
-    const n = vals.filter(v => typeof v === 'number').length;
-    return n / vals.length > 0.7;
+    if (!vals.length) return false;
+    return vals.filter(v => typeof v === 'number').length / vals.length > 0.7;
   });
-
-  const order = {pv:0, mv:1, sv:2};
-  return numCols[order[role]] || '';
+  return numCols[{pv:0, mv:1, sv:2}[role]] || '';
 }
 
 function renderMapping() {
@@ -1054,4 +1044,74 @@ function renderPreview() {
 }
 
 function toggleFull() {
-  const w = document.ge
+  const w = document.getElementById('tbl-wrap');
+  w.style.maxHeight = w.style.maxHeight === 'none' ? '300px' : 'none';
+}
+
+// ─── Sample data ─────────────────────────────
+function loadSample() {
+  toast('🔬 TIC-101 샘플 데이터 생성 중...');
+  const rows=[]; const start=new Date('2024-03-15T08:00:00');
+  let pv=120, sp=120, mv=50, integral=0, prevErr=0;
+  const Kp=1.2, Ti=2.5, Td=0.3, dt=1/60;
+
+  for(let i=0;i<180;i++){
+    const t=new Date(start.getTime()+i*60000);
+    if(i===30) sp=130; if(i===100) sp=125;
+    const noise=(Math.random()-0.5)*0.4;
+    const err=sp-pv;
+    integral+=err*dt;
+    mv=Math.min(100,Math.max(0,Kp*(err+integral/Ti+Td*(err-prevErr)/dt)+50));
+    prevErr=err;
+    pv=pv+dt/3*(0.8*mv*0.6-(pv-100))+noise;
+    rows.push({
+      'Timestamp':t.toISOString().replace('T',' ').slice(0,19),
+      'PV_TIC101':+pv.toFixed(2),'MV_TIC101':+mv.toFixed(1),
+      'SP_TIC101':sp,'Mode_TIC101':i<10?'MANUAL':'AUTO'
+    });
+  }
+
+  S.data=rows; S.headers=['Timestamp','PV_TIC101','MV_TIC101','SP_TIC101','Mode_TIC101']; S.file='sample_TIC101.csv';
+  hide('upload-card'); show('file-info-bar');
+  document.getElementById('fi-name').textContent='sample_TIC101.csv';
+  document.getElementById('fi-meta').textContent='180 rows  ·  5 columns  ·  샘플 데이터 (TIC-101 온도 제어기)';
+  renderQuality(); renderMapping(); renderPreview();
+  show('quality-card'); show('mapping-card'); show('preview-card');
+  toast('✅ 샘플 데이터 로드 완료 (TIC-101 · 180 min)');
+}
+
+// ─── Reset ────────────────────────────────────
+function resetAll() {
+  S={data:[],headers:[],file:'',mapping:{ts:'',pv:'',mv:'',sv:'',mode:''}};
+  document.getElementById('file-input-el').value='';
+  ['file-info-bar','quality-card','mapping-card','preview-card','action-bar'].forEach(hide);
+  show('upload-card');
+}
+
+// ─── Next ─────────────────────────────────────
+function next() { location.href='pid_tuning_screen2.html'; }
+
+// ─── Sidebar toggle ───────────────────────────
+function toggleSection(el) {
+  const items = el.parentElement.querySelector('.sb-items');
+  const chev  = el.querySelector('.sb-chevron');
+  if (!items) return;
+  const open = items.style.display !== 'none';
+  items.style.display = open ? 'none' : '';
+  chev.classList.toggle('open', !open);
+}
+
+// ─── Toast ────────────────────────────────────
+let _tt;
+function toast(msg) {
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(_tt); _tt=setTimeout(()=>el.classList.remove('show'),2800);
+}
+
+// ─── Helpers ──────────────────────────────────
+function show(id){ const e=document.getElementById(id); if(e) e.classList.remove('hidden'); }
+function hide(id){ const e=document.getElementById(id); if(e) e.classList.add('hidden'); }
+</script>
+</body>
+</html>
