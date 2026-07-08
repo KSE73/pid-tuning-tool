@@ -257,7 +257,7 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
   <div class="sb-section">
     <div class="sb-section-header"><div class="sb-section-label"><span class="dot dot-purple"></span>진단함</div></div>
     <div class="sb-items">
-      <a class="sb-item" href="pid_tuning_screen5.html">Plant Triage</a>
+      <a class="sb-item">Plant Triage</a>
       <a class="sb-item">불량 Loop</a>
     </div>
   </div>
@@ -272,15 +272,15 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
 
   <!-- Step bar -->
   <div class="step-bar">
-    <a class="step-item done" href="pid_tuning_screen1.html" style="text-decoration:none;"><div class="step-circle">✓</div><span class="step-label">데이터 수집</span></a>
+    <div class="step-item done"><div class="step-circle">✓</div><span class="step-label">데이터 수집</span></div>
     <div class="step-sep done"></div>
-    <a class="step-item done" href="pid_tuning_screen2.html" style="text-decoration:none;"><div class="step-circle">✓</div><span class="step-label">트렌드 분석</span></a>
+    <div class="step-item done"><div class="step-circle">✓</div><span class="step-label">트렌드 분석</span></div>
     <div class="step-sep done"></div>
-    <a class="step-item active" href="pid_tuning_screen3.html" style="text-decoration:none;"><div class="step-circle">3</div><span class="step-label">모델 식별 · PID 추천</span></a>
+    <div class="step-item active"><div class="step-circle">3</div><span class="step-label">모델 식별 · PID 추천</span></div>
     <div class="step-sep"></div>
-    <a class="step-item" href="pid_tuning_screen4.html" style="text-decoration:none;"><div class="step-circle">4</div><span class="step-label">시뮬레이션</span></a>
+    <div class="step-item"><div class="step-circle">4</div><span class="step-label">시뮬레이션</span></div>
     <div class="step-sep"></div>
-    <a class="step-item" href="pid_tuning_screen5.html" style="text-decoration:none;"><div class="step-circle">5</div><span class="step-label">Loop 진단</span></a>
+    <div class="step-item"><div class="step-circle">5</div><span class="step-label">Loop 진단</span></div>
   </div>
 
   <!-- Page title -->
@@ -298,7 +298,7 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
   <!-- Loop bar -->
   <div class="loop-bar">
     <span class="loop-bar-label">Loop</span>
-    <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600" id="loop-name">—</span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600">TIC-101</span>
     <div style="width:1px;height:20px;background:#E8E8E8"></div>
     <span class="loop-bar-label">DCS</span>
     <select id="dcs-sel" onchange="recalc()" style="font-family:inherit;font-size:12px;border:1px solid #E0E0E0;border-radius:5px;padding:5px 10px;outline:none;background:#FAFAFA;cursor:pointer">
@@ -311,14 +311,14 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
     <span class="pv-chip chip-pv">PV: 온도 (°C)</span>
     <span class="pv-chip chip-mv">MV: 밸브 개도 (%)</span>
     <span class="pv-chip chip-region">구간: 08:30 ~ 09:20</span>
-    <div style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:11px;color:#aaa" id="r2-topbar">R² = —</div>
+    <div style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:11px;color:#aaa" id="r2-topbar">R² = 0.943</div>
   </div>
 
   <!-- Uncertainty banner -->
   <div class="uncertainty-bar ub-high" id="unc-bar">
     <span class="ub-icon">🟢</span>
     <div class="ub-text">
-      데이터 업로드 및 구간 선택 후 자동 계산됩니다.
+      <strong>모델 신뢰도 높음</strong> — R² = 0.943, ΔMV = 12.0%, SNR = 14.2 dB. 식별된 FOPDT 모델이 공정 응답을 잘 설명합니다. 추천 PID 파라미터의 신뢰도는 높습니다.
     </div>
     <span class="ub-badge" id="unc-badge">높음</span>
   </div>
@@ -343,7 +343,7 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
               <div class="fopdt-item highlight">
                 <div class="fopdt-name">Process Gain</div>
                 <div class="fopdt-symbol">Kp</div>
-                <div class="fopdt-val" id="kp-val">—</div>
+                <div class="fopdt-val" id="kp-val">0.824</div>
                 <div class="fopdt-unit">°C / %MV</div>
                 <div class="fopdt-ci" id="kp-ci">95% CI: [0.781, 0.867]</div>
                 <span class="conf-badge conf-high">HIGH</span>
@@ -351,7 +351,7 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
               <div class="fopdt-item highlight">
                 <div class="fopdt-name">Time Constant</div>
                 <div class="fopdt-symbol">τ</div>
-                <div class="fopdt-val" id="tau-val">—</div>
+                <div class="fopdt-val" id="tau-val">3.21</div>
                 <div class="fopdt-unit">min</div>
                 <div class="fopdt-ci" id="tau-ci">95% CI: [2.94, 3.48]</div>
                 <span class="conf-badge conf-high">HIGH</span>
@@ -359,7 +359,7 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
               <div class="fopdt-item highlight">
                 <div class="fopdt-name">Dead Time</div>
                 <div class="fopdt-symbol">θ</div>
-                <div class="fopdt-val" id="theta-val">—</div>
+                <div class="fopdt-val" id="theta-val">1.05</div>
                 <div class="fopdt-unit">min</div>
                 <div class="fopdt-ci" id="theta-ci">95% CI: [0.82, 1.28]</div>
                 <span class="conf-badge conf-mid">MID</span>
@@ -371,10 +371,10 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
               <div style="font-size:10px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">전달함수 (Transfer Function)</div>
               <div style="font-family:'JetBrains Mono',monospace;color:#fff;font-size:14px;line-height:2;text-align:center">
                 <span style="color:#94A3B8">G(s) = </span>
-                <span style="color:#60A5FA" id="tf-kp">—</span>
-                <span style="color:#94A3B8"> × e</span><sup style="color:#F59E0B">-<span id="tf-theta">—</span>s</sup>
+                <span style="color:#60A5FA" id="tf-kp">0.824</span>
+                <span style="color:#94A3B8"> × e</span><sup style="color:#F59E0B">-<span id="tf-theta">1.05</span>s</sup>
                 <span style="color:#94A3B8"> / ( </span>
-                <span style="color:#34D399" id="tf-tau">—</span>
+                <span style="color:#34D399" id="tf-tau">3.21</span>
                 <span style="color:#94A3B8">s + 1 )</span>
               </div>
             </div>
@@ -383,10 +383,10 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
             <div class="r2-bar-wrap">
               <span class="r2-label">모델 적합도</span>
               <div class="r2-track"><div class="r2-fill" id="r2-fill" style="width:94.3%"></div></div>
-              <span class="r2-val" id="r2-val">R² = —</span>
+              <span class="r2-val" id="r2-val">R² = 0.943</span>
             </div>
             <div style="display:flex;gap:16px;margin-top:8px">
-              <span style="font-size:11px;color:#888">RMSE: <span style="font-family:'JetBrains Mono',monospace;color:#555" id="rmse-val">— </span></span>
+              <span style="font-size:11px;color:#888">RMSE: <span style="font-family:'JetBrains Mono',monospace;color:#555" id="rmse-val">0.38 °C</span></span>
               <span style="font-size:11px;color:#888">τ/θ 비율: <span style="font-family:'JetBrains Mono',monospace;color:#555" id="ratio-val">3.06</span></span>
               <span style="font-size:11px;color:#888">식별 방법: <span style="font-family:'JetBrains Mono',monospace;color:#555">Least Squares Fit</span></span>
             </div>
@@ -455,8 +455,8 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
         <!-- Lambda slider (IMC) -->
         <div class="lambda-row" id="lambda-row">
           <span class="lambda-label">λ (Lambda)</span>
-          <input type="range" class="lambda-slider" id="lambda-slider" min="1" max="20" step="0.5" value="2.0" oninput="onLambda(this.value)">
-          <span class="lambda-val" id="lambda-val">2.0</span>
+          <input type="range" class="lambda-slider" id="lambda-slider" min="1" max="20" step="0.5" value="6.42" oninput="onLambda(this.value)">
+          <span class="lambda-val" id="lambda-val">6.42</span>
           <span style="width:1px;height:16px;background:#E8E8E8"></span>
           <span class="lambda-hint" id="lambda-hint">= 2× θ &nbsp; 권장: 2~5× Dead Time</span>
         </div>
@@ -475,9 +475,9 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
           </div>
           <div class="basis-body" id="basis-body">
             <div style="margin-bottom:12px;padding:10px 14px;background:#1C1C1E;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.8;color:#94A3B8">
-              <span style="color:#60A5FA">FOPDT 모델:</span> Kp=<span style="color:#34D399" id="b-kp">—</span>, τ=<span style="color:#34D399" id="b-tau">—</span> min, θ=<span style="color:#F59E0B" id="b-theta">—</span> min<br>
+              <span style="color:#60A5FA">FOPDT 모델:</span> Kp=<span style="color:#34D399" id="b-kp">0.824</span>, τ=<span style="color:#34D399" id="b-tau">3.21</span> min, θ=<span style="color:#F59E0B" id="b-theta">1.05</span> min<br>
               <span style="color:#60A5FA">Tuning Method:</span> <span style="color:#fff" id="b-method">IMC (Internal Model Control)</span><br>
-              <span style="color:#60A5FA">λ =</span> <span style="color:#FF6B2B" id="b-lambda">2.0</span> min &nbsp;[선택: 약 2× Dead Time]
+              <span style="color:#60A5FA">λ =</span> <span style="color:#FF6B2B" id="b-lambda">6.42</span> min &nbsp;[선택: 약 2× Dead Time]
             </div>
             <div id="basis-steps"></div>
           </div>
@@ -517,11 +517,11 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
 <!-- Action bar -->
 <div class="action-bar">
   <div class="action-bar-info">
-    <strong id="ab-info">— · — · —</strong><strong id="ab-info">TIC-101 · IMC Tuning · Honeywell Experion</strong>&nbsp; — PID 파라미터 계산 완료. 시뮬레이션으로 응답을 확인하세요.nbsp; — 데이터 업로드 후 PID 파라미터가 계산됩니다.
+    <strong id="ab-info">TIC-101 · IMC Tuning · Honeywell Experion</strong>&nbsp; — PID 파라미터 계산 완료. 시뮬레이션으로 응답을 확인하세요.
   </div>
   <div class="action-bar-right">
-    <button class="btn btn-outline" onclick="location.href='pid_tuning_screen2.html'">← 이전</button>
-    <button class="btn btn-orange" onclick="location.href='pid_tuning_screen4.html'">시뮬레이션으로 이동 →</button>
+    <button class="btn btn-outline" onclick="showToast('← 트렌드 분석으로 이동')">← 이전</button>
+    <button class="btn btn-orange" onclick="showToast('→ 시뮬레이션 화면으로 이동 (Screen 4 구현 예정)')">시뮬레이션으로 이동 →</button>
   </div>
 </div>
 
@@ -532,7 +532,7 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
 // MODEL PARAMETERS (simulated identification result)
 // ══════════════════════════════════════════
 let MODEL = { kp:null, tau:null, theta:null, r2:null, rmse:null };
-let LAMBDA = 2.0;
+let LAMBDA = 6.42;
 let METHOD = 'imc';
 let DCS = 'honeywell';
 
@@ -543,32 +543,32 @@ const DCS_DEFS = {
   honeywell: {
     name:'Honeywell Experion PKS',
     params:[
-      {key:'P', dcsName:'GAIN',  unit:'(무단위)',         prev:0},
-      {key:'I', dcsName:'RSET',  unit:'min/rep',          prev:0},
-      {key:'D', dcsName:'RATE',  unit:'min',               prev:0},
+      {key:'P', dcsName:'GAIN',  unit:'(무단위)',         prev:1.50},
+      {key:'I', dcsName:'RSET',  unit:'min/rep',          prev:3.20},
+      {key:'D', dcsName:'RATE',  unit:'min',               prev:0.00},
     ]
   },
   yokogawa: {
     name:'Yokogawa CENTUM VP',
     params:[
-      {key:'P', dcsName:'P (%)', unit:'%  (Kp=100/P)',    prev:0},
-      {key:'I', dcsName:'Ti',    unit:'min',               prev:0},
-      {key:'D', dcsName:'Td',    unit:'min',               prev:0},
+      {key:'P', dcsName:'P (%)', unit:'%  (Kp=100/P)',    prev:55.0},
+      {key:'I', dcsName:'Ti',    unit:'min',               prev:3.50},
+      {key:'D', dcsName:'Td',    unit:'min',               prev:0.00},
     ]
   },
   deltav: {
     name:'Emerson DeltaV',
     params:[
-      {key:'P', dcsName:'GAIN',  unit:'(무단위)',          prev:0},
-      {key:'I', dcsName:'RESET', unit:'sec/repeat',        prev:0},
+      {key:'P', dcsName:'GAIN',  unit:'(무단위)',          prev:1.50},
+      {key:'I', dcsName:'RESET', unit:'sec/repeat',        prev:192},
       {key:'D', dcsName:'RATE',  unit:'sec',               prev:0},
     ]
   },
   abb: {
     name:'ABB 800xA',
     params:[
-      {key:'P', dcsName:'KP',    unit:'(무단위)',          prev:0},
-      {key:'I', dcsName:'TI',    unit:'sec',               prev:0},
+      {key:'P', dcsName:'KP',    unit:'(무단위)',          prev:1.50},
+      {key:'I', dcsName:'TI',    unit:'sec',               prev:210},
       {key:'D', dcsName:'TD',    unit:'sec',               prev:0},
     ]
   },
@@ -717,23 +717,41 @@ function renderCompareTable(vals, def, Kc, Ti, Td) {
 // ══════════════════════════════════════════
 // MODEL FIT CHART
 // ══════════════════════════════════════════
-function buildFitChart() {
-  // Simulate step response from FOPDT
+function buildFitChart(segData, pvBase0, deltaMV0) {
+  const useReal = !!(segData && segData.length);
   const N=60, dt=1;
   const labels=[], pvMeas=[], pvModel=[], mvData=[];
-  let pv=120, mv=50;
   const {kp,tau,theta}=MODEL;
-  for(let i=0;i<N;i++){
-    if(i===10)mv=62;
-    const noise=(Math.random()-.5)*.3;
-    const t_delay=Math.max(0,i-Math.round(theta/dt));
-    const mvDel=t_delay<10?50:62;
-    const pvM=120+kp*(mvDel-50)*(1-Math.exp(-i*dt/tau));
-    pvMeas.push(+(pv+noise).toFixed(2));
-    pvModel.push(+pvM.toFixed(2));
-    mvData.push(mv);
-    pv=pv+dt/tau*(kp*(mv-50)-(pv-120))+noise;
-    labels.push(i+'min');
+  if (useReal) {
+    let dtMin=1/12;
+    if(segData[0].ts&&segData[1]&&segData[1].ts){
+      const t0=new Date(segData[0].ts),t1=new Date(segData[1].ts);
+      if(!isNaN(t0)&&!isNaN(t1)) dtMin=(t1-t0)/60000;
+    }
+    let stepIdx=1,maxD=0;
+    segData.forEach((r,i)=>{if(i>0){const d=Math.abs(r.mv-segData[i-1].mv);if(d>maxD){maxD=d;stepIdx=i;}}});
+    segData.forEach((r,i)=>{
+      const tStep=Math.max(0,(i-stepIdx)*dtMin-theta);
+      const pvFit=(pvBase0||r.pv)+kp*(deltaMV0||0)*(tStep>0?1-Math.exp(-tStep/Math.max(tau,0.001)):0);
+      labels.push(i*dtMin<1?(i*dtMin*60).toFixed(0)+'s':(i*dtMin).toFixed(1)+'min');
+      pvMeas.push(+parseFloat(r.pv).toFixed(3));
+      pvModel.push(+pvFit.toFixed(3));
+      mvData.push(+parseFloat(r.mv).toFixed(2));
+    });
+  } else {
+    let pv=120,mv=50;
+    for(let i=0;i<N;i++){
+      if(i===10)mv=62;
+      const noise=(Math.random()-.5)*.3;
+      const t_delay=Math.max(0,i-Math.round(theta/dt));
+      const mvDel=t_delay<10?50:62;
+      const pvM=120+kp*(mvDel-50)*(1-Math.exp(-i*dt/tau));
+      pvMeas.push(+(pv+noise).toFixed(2));
+      pvModel.push(+pvM.toFixed(2));
+      mvData.push(mv);
+      pv=pv+dt/tau*(kp*(mv-50)-(pv-120))+noise;
+      labels.push(i+'min');
+    }
   }
   const ctx=document.getElementById('fit-chart').getContext('2d');
   new Chart(ctx,{
@@ -822,14 +840,92 @@ function exportReport(){showToast('📄 보고서 생성 중... (PDF 출력 예�
 
 // ── Init ──────────────────────────────────
 window.addEventListener('load',()=>{
-  if(MODEL.kp === null){
-    showEmptyState();
-  } else {
-    buildFitChart();
+  try {
+    const raw = sessionStorage.getItem('pidData');
+    if (!raw) { showEmptyState(); return; }
+    const payload = JSON.parse(raw);
+    const seg = payload.segment || payload.data || [];
+    if (!seg.length) { showEmptyState(); return; }
+
+    const pvArr = seg.map(r => parseFloat(r.pv));
+    const mvArr = seg.map(r => parseFloat(r.mv));
+    const n = pvArr.length;
+
+    // 샘플링 간격 (분)
+    let dtMin = 1/12;
+    if (seg[0].ts && seg[1] && seg[1].ts) {
+      const t0=new Date(seg[0].ts), t1=new Date(seg[1].ts);
+      if (!isNaN(t0)&&!isNaN(t1)) dtMin=(t1-t0)/60000;
+    }
+
+    // MV 스텝 위치
+    let stepIdx=1, maxDelta=0;
+    for(let i=1;i<n;i++){
+      const d=Math.abs(mvArr[i]-mvArr[i-1]);
+      if(d>maxDelta){maxDelta=d;stepIdx=i;}
+    }
+
+    const baseN = Math.max(1, Math.floor(stepIdx*0.3));
+    const pvBase = pvArr.slice(0,baseN).reduce((a,b)=>a+b,0)/baseN;
+    const tailN  = Math.max(1, Math.floor((n-stepIdx)*0.2));
+    const pvFinal= pvArr.slice(n-tailN).reduce((a,b)=>a+b,0)/tailN;
+    const deltaPV = pvFinal - pvBase;
+
+    const mvBefore = mvArr.slice(0,stepIdx).reduce((a,b)=>a+b,0)/Math.max(1,stepIdx);
+    const mvAfter  = mvArr.slice(stepIdx).reduce((a,b)=>a+b,0)/Math.max(1,n-stepIdx);
+    const deltaMV  = mvAfter - mvBefore;
+
+    // 63.2%, 28.3% 응답 시간
+    const pv632=pvBase+0.632*deltaPV, pv283=pvBase+0.283*deltaPV;
+    let t632=-1, t283=-1;
+    for(let i=stepIdx;i<n;i++){
+      const pv=pvArr[i];
+      if(t283<0&&(deltaPV>0?pv>=pv283:pv<=pv283)) t283=(i-stepIdx)*dtMin;
+      if(t632<0&&(deltaPV>0?pv>=pv632:pv<=pv632)) t632=(i-stepIdx)*dtMin;
+    }
+    const tau   = (t632>0&&t283>0) ? +(1.5*(t632-t283)).toFixed(4) : +(t632>0?t632*0.63:Math.max(n*dtMin*0.3,0.1)).toFixed(4);
+    const theta = (t632>0&&t283>0) ? +Math.max(t632-tau,0).toFixed(4) : +(t283>0?t283*0.5:dtMin).toFixed(4);
+    const kp    = Math.abs(deltaMV)>0.01 ? +(deltaPV/deltaMV).toFixed(4) : 1.0;
+
+    // R², RMSE
+    let ssRes=0, ssTot=0;
+    const pvMean=pvArr.reduce((a,b)=>a+b,0)/n;
+    pvArr.forEach((v,i)=>{
+      const tStep=Math.max(0,(i-stepIdx)*dtMin-theta);
+      const pvFit=pvBase+kp*deltaMV*(tStep>0?1-Math.exp(-tStep/Math.max(tau,0.001)):0);
+      ssRes+=(v-pvFit)**2; ssTot+=(v-pvMean)**2;
+    });
+    const r2  =+(Math.max(0,1-ssRes/Math.max(ssTot,1e-9))).toFixed(4);
+    const rmse=+(Math.sqrt(ssRes/n)).toFixed(4);
+
+    MODEL={kp, tau:Math.max(tau,0.001), theta:Math.max(theta,0), r2, rmse};
+
+    const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+    set('kp-val',    kp.toFixed(3));
+    set('tau-val',   MODEL.tau.toFixed(3));
+    set('theta-val', MODEL.theta.toFixed(3));
+    set('r2-val',    'R² = '+r2.toFixed(3));
+    set('rmse-val',  rmse.toFixed(3)+' EU');
+    set('tf-kp',     kp.toFixed(3));
+    set('tf-tau',    MODEL.tau.toFixed(3));
+    set('tf-theta',  MODEL.theta.toFixed(3));
+
+    buildFitChart(seg, pvBase, deltaMV);
     renderDCSParams();
+
+  } catch(err) {
+    console.error('S3 load error:', err);
+    showEmptyState();
   }
 });
 
-function showEmptyState(){
-  const overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;top:48px;left:168px;right:0;bottom:0;background:rgba(245,246,248,0.97);display
+
+let _tt;
+function showToast(msg){
+  const el=document.getElementById('toast-el');
+  el.textContent=msg;el.classList.add('show');
+  clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),2800);
+}
+</script>
+</body>
+</html>

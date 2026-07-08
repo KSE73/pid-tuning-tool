@@ -870,7 +870,27 @@ function confirmRegion(){
 }
 
 function goBack(){showToast('← Screen 1으로 이동 (구현 예정)');}
-function goNext(){showToast('→ Screen 3 모델 식별로 이동 (구현 예정)');}
+function goNext(){
+  // 선택 구간이 없으면 전체 데이터 사용
+  const s = selStart >= 0 ? selStart : 0;
+  const e = selEnd   >= 0 ? selEnd   : DATA.length - 1;
+  const segData = DATA.slice(s, e+1).map((d,i) => ({
+    t: i,
+    ts: LABELS[s+i],
+    pv: d.pv,
+    mv: d.mv,
+    sv: d.sv
+  }));
+  // sessionStorage에 구간 데이터 추가 저장
+  try {
+    const prev = JSON.parse(sessionStorage.getItem('pidData') || '{}');
+    prev.segment = segData;
+    prev.selStart = s;
+    prev.selEnd   = e;
+    sessionStorage.setItem('pidData', JSON.stringify(prev));
+  } catch(err) { console.warn('segment save fail:', err); }
+  location.href = 'pid_tuning_screen3.html';
+}
 
 // ══════════════════════════════════════════
 // INIT
