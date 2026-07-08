@@ -810,34 +810,50 @@ function processFile(f) {
     const rd = new FileReader();
     rd.onload = e => {
       try {
-        const wb = XLSX.read(e.target.result, {type:'array', cellDates:true, dense:false});
+        const wb = XLSX.read(e.target.result, {type:'array', cellDates:true});
         const ws = wb.Sheets[wb.SheetNames[0]];
         const ref = XLSX.utils.decode_range(ws['!ref'] || 'A1');
 
-        // ── 헤더 행 자동 탐색 ──────────────────────────────
-        // 비어있지 않은 셀 2개 이상 + 문자열 비율 50% 이상인 첫 행
+        // ── 헤더 행 자동 탐색 ──────────────────────────────────────
+        // 우선순위 1: 날짜/시간 키워드(날짜·시간·date·time)가 포함된 셀이 있는 행
+        // 우선순위 2: 직전 행까지 문자열, 이번 행부터 숫자/날짜 → 직전 행
+        const DATE_KW = ['날짜','시간','date','time','timestamp','datetime'];
         let headerRow = ref.s.r;
-        for (let r = ref.s.r; r <= Math.min(ref.s.r + 20, ref.e.r); r++) {
-          let strCnt = 0, totalCnt = 0;
+        let lastStrRow = ref.s.r;
+        outer: for (let r = ref.s.r; r <= Math.min(ref.s.r + 25, ref.e.r); r++) {
+          let strCnt=0, numCnt=0, dateCnt=0, totalCnt=0;
           for (let c = ref.s.c; c <= ref.e.c; c++) {
-            const cell = ws[XLSX.utils.encode_cell({r, c})];
+            const cell = ws[XLSX.utils.encode_cell({r,c})];
             if (!cell || cell.v == null) continue;
             totalCnt++;
-            if (typeof cell.v === 'string' && cell.v.trim() !== '') strCnt++;
+            if (cell.t === 's') {
+              strCnt++;
+              // 날짜 키워드 포함 셀 → 이 행이 헤더
+              if (DATE_KW.some(k => cell.v.toLowerCase().includes(k))) {
+                headerRow = r; break outer;
+              }
+            } else if (cell.t === 'd') { dateCnt++; }
+            else if (cell.t === 'n') { numCnt++; }
           }
-          if (totalCnt >= 2 && strCnt / totalCnt >= 0.5) { headerRow = r; break; }
+          if (totalCnt === 0) continue;
+          const strRatio = strCnt / totalCnt;
+          if (strRatio >= 0.5) { lastStrRow = r; }
+          // 숫자/날짜가 주인 행 → 이전 문자열 행이 헤더
+          else if ((numCnt + dateCnt) / totalCnt >= 0.5 && r > ref.s.r) {
+            headerRow = lastStrRow; break;
+          }
         }
 
-        // 한 번만 파싱 (cellDates:true 로 Date 객체 반환)
-        const allRows = XLSX.utils.sheet_to_json(ws, {
-          defval: null,
-          range: headerRow,
-        });
+        // headerRow 기준으로 파싱
+        const allRows = XLSX.utils.sheet_to_json(ws, {defval:null, range:headerRow});
 
-        // 빈 행 및 첫 번째 행(ArrayFormula 잔재) 필터링
-        const clean = allRows.filter(row =>
-          Object.values(row).some(v => v != null && v !== '' && !(v instanceof Error))
-        );
+        // 빈 행 + 값이 전부 문자열인 첫 행(설명 행) + Error 행 제거
+        const clean = allRows.filter(row => {
+          const vals = Object.values(row).filter(v => v != null && v !== '');
+          if (vals.length === 0) return false;
+          // 숫자 또는 Date 가 하나라도 있는 행만 남김
+          return vals.some(v => typeof v === 'number' || v instanceof Date);
+        });
 
         loaded(clean, clean.length ? Object.keys(clean[0]) : [], f);
       } catch(err) {
@@ -1038,27 +1054,4 @@ function renderPreview() {
 }
 
 function toggleFull() {
-  const w = document.getElementById('tbl-wrap');
-  w.style.maxHeight = w.style.maxHeight === 'none' ? '300px' : 'none';
-}
-
-// ─── Sample data ─────────────────────────────
-function loadSample() {
-  toast('🔬 TIC-101 샘플 데이터 생성 중...');
-  const rows=[]; const start=new Date('2024-03-15T08:00:00');
-  let pv=120, sp=120, mv=50, integral=0, prevErr=0;
-  const Kp=1.2, Ti=2.5, Td=0.3, dt=1/60;
-
-  for(let i=0;i<180;i++){
-    const t=new Date(start.getTime()+i*60000);
-    if(i===30) sp=130; if(i===100) sp=125;
-    const noise=(Math.random()-0.5)*0.4;
-    const err=sp-pv;
-    integral+=err*dt;
-    mv=Math.min(100,Math.max(0,Kp*(err+integral/Ti+Td*(err-prevErr)/dt)+50));
-    prevErr=err;
-    pv=pv+dt/3*(0.8*mv*0.6-(pv-100))+noise;
-    rows.push({
-      'Timestamp':t.toISOString().replace('T',' ').slice(0,19),
-      'PV_TIC101':+pv.toFixed(2),'MV_TIC101':+mv.toFixed(1),
-      'SP_TIC101':sp,'Mode_TIC101
+  const w = document.ge
