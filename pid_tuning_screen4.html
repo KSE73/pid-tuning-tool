@@ -439,8 +439,8 @@ input[type=range].slider{width:100%;accent-color:#FF6B2B;height:4px;cursor:point
     <strong id="ab-summary">추천 PID 시뮬레이션 완료</strong> &nbsp;—&nbsp; 결과를 확인하고 Loop 진단으로 이동하세요.
   </div>
   <div class="action-bar-right">
-    <button class="btn btn-outline" onclick="showToast('← 모델 식별·PID 추천으로 이동')">← 이전</button>
-    <button class="btn btn-orange" onclick="showToast('→ Loop 진단 화면으로 이동 (Screen 5 구현 예정)')">Loop 진단으로 이동 →</button>
+    <button class="btn btn-outline" onclick="location.href='pid_tuning_screen3.html'">← 이전</button>
+    <button class="btn btn-orange" onclick="goLoop()">Loop 진단으로 이동 →</button>
   </div>
 </div>
 
@@ -749,6 +749,19 @@ window.addEventListener('load', () => {
   initCharts();
   redraw();
 });
+
+
+// ── Navigate to Screen 5 ─────────────────
+function goLoop() {
+  try {
+    const prev = JSON.parse(sessionStorage.getItem('pidData') || '{}');
+    // Save current tuned PID and PROC model for Screen 5
+    prev.tuned = { kc: TUNED.p, ti: TUNED.i, td: TUNED.d };
+    if (!prev.model) prev.model = { kp: PROC.kp, tau: PROC.tau, theta: PROC.theta };
+    sessionStorage.setItem('pidData', JSON.stringify(prev));
+  } catch(e) { console.warn('goLoop save:', e); }
+  location.href = 'pid_tuning_screen5.html';
+}
 
 let _tt;
 function showToast(msg){

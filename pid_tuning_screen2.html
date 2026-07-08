@@ -869,7 +869,7 @@ function confirmRegion(){
   document.getElementById('next-btn').disabled=false;
 }
 
-function goBack(){showToast('← Screen 1으로 이동 (구현 예정)');}
+function goBack(){ location.href='pid_tuning_screen1.html'; }
 function goNext(){
   // 선택 구간이 없으면 전체 데이터 사용
   const s = selStart >= 0 ? selStart : 0;
