@@ -730,7 +730,8 @@ window.addEventListener('load', () => {
         deltav:    { i:'DeltaV: RESET (sec/rep)',     d:'DeltaV: RATE (sec)' },
         abb:       { i:'ABB 800xA: TI (sec)',         d:'ABB 800xA: TD (sec)' },
       };
-      const lbl = dcsLabels[payload.dcs] || dcsLabels.honeywell;
+      const savedDcs = payload.dcs || localStorage.getItem('pid_dcs') || 'yokogawa';
+      const lbl = dcsLabels[savedDcs] || dcsLabels.honeywell;
       const iLbl = document.getElementById('i-dcs-label');
       const dLbl = document.getElementById('d-dcs-label');
       if (iLbl) iLbl.textContent = lbl.i;

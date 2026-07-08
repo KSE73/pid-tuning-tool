@@ -302,8 +302,8 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
     <div style="width:1px;height:20px;background:#E8E8E8"></div>
     <span class="loop-bar-label">DCS</span>
     <select id="dcs-sel" onchange="recalc()" style="font-family:inherit;font-size:12px;border:1px solid #E0E0E0;border-radius:5px;padding:5px 10px;outline:none;background:#FAFAFA;cursor:pointer">
-      <option value="honeywell">Honeywell Experion PKS</option>
       <option value="yokogawa">Yokogawa CENTUM VP</option>
+      <option value="honeywell">Honeywell Experion PKS</option>
       <option value="deltav">Emerson DeltaV</option>
       <option value="abb">ABB 800xA</option>
     </select>
@@ -534,7 +534,7 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
 let MODEL = { kp:null, tau:null, theta:null, r2:null, rmse:null };
 let LAMBDA = 6.42;
 let METHOD = 'imc';
-let DCS = 'honeywell';
+let DCS = localStorage.getItem('pid_dcs') || 'yokogawa';
 
 // ══════════════════════════════════════════
 // DCS PARAMETER DEFINITIONS
@@ -803,6 +803,7 @@ function selectMethod(m, el){
 
 function recalc(){
   DCS=document.getElementById('dcs-sel').value;
+  localStorage.setItem('pid_dcs', DCS);
   renderDCSParams();
   showToast('✅ '+DCS_DEFS[DCS].name+' 형식으로 변환됨');
 }
@@ -840,6 +841,12 @@ function exportReport(){showToast('📄 보고서 생성 중... (PDF 출력 예�
 
 // ── Init ──────────────────────────────────
 window.addEventListener('load',()=>{
+  // DCS 선택 복원
+  const savedDCS = localStorage.getItem('pid_dcs') || 'yokogawa';
+  DCS = savedDCS;
+  const dcsEl = document.getElementById('dcs-sel');
+  if (dcsEl) dcsEl.value = DCS;
+
   try {
     const raw = sessionStorage.getItem('pidData');
     if (!raw) { showEmptyState(); return; }
