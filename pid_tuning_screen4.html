@@ -155,13 +155,13 @@ input[type=range].slider{width:100%;accent-color:#FF6B2B;height:4px;cursor:point
 <body>
 
 <header class="g-topbar">
-  <a class="g-logo"><div class="g-logo-icon">P</div><span class="g-logo-name">PID Tuning Tool</span></a>
+  <a class="g-logo" href="index.html" style="cursor:pointer;text-decoration:none;"><div class="g-logo-icon">P</div><span class="g-logo-name">PID Tuning Tool</span></a>
   <nav class="g-nav">
-    <a class="g-nav-item">데이터 관리</a>
-    <a class="g-nav-item pill">Tuning 작업</a>
-    <a class="g-nav-item">Loop 진단</a>
-    <a class="g-nav-item">보고서</a>
-    <a class="g-nav-item">설정</a>
+    <a class="g-nav-item" href="pid_tuning_screen1.html">데이터 관리</a>
+    <a class="g-nav-item pill" href="pid_tuning_screen3.html">Tuning 작업</a>
+    <a class="g-nav-item" href="pid_tuning_screen5.html">Loop 진단</a>
+    <a class="g-nav-item" href="pid_tuning_formulas.html">보고서</a>
+    <a class="g-nav-item" href="#">설정</a>
   </nav>
   <div class="g-topbar-right">
     <button class="g-icon-btn">🔔</button>
@@ -202,7 +202,7 @@ input[type=range].slider{width:100%;accent-color:#FF6B2B;height:4px;cursor:point
   <div class="sb-section">
     <div class="sb-section-header"><div class="sb-section-label"><span class="dot dot-purple"></span>진단함</div></div>
     <div class="sb-items">
-      <a class="sb-item">Plant Triage <span class="sb-count">41</span></a>
+      <a class="sb-item" href="pid_tuning_screen5.html">Plant Triage <span class="sb-count">41</span></a>
       <a class="sb-item">불량 Loop <span class="sb-count" style="background:#FEE2E2;color:#DC2626">7</span></a>
     </div>
   </div>
@@ -215,15 +215,15 @@ input[type=range].slider{width:100%;accent-color:#FF6B2B;height:4px;cursor:point
 <main class="main">
 
   <div class="step-bar">
-    <div class="step-item done"><div class="step-circle">✓</div><span class="step-label">데이터 수집</span></div>
+    <a class="step-item done" href="pid_tuning_screen1.html" style="text-decoration:none;"><div class="step-circle">✓</div><span class="step-label">데이터 수집</span></a>
     <div class="step-sep done"></div>
-    <div class="step-item done"><div class="step-circle">✓</div><span class="step-label">트렌드 분석</span></div>
+    <a class="step-item done" href="pid_tuning_screen2.html" style="text-decoration:none;"><div class="step-circle">✓</div><span class="step-label">트렌드 분석</span></a>
     <div class="step-sep done"></div>
-    <div class="step-item done"><div class="step-circle">✓</div><span class="step-label">모델 식별·PID 추천</span></div>
+    <a class="step-item done" href="pid_tuning_screen3.html" style="text-decoration:none;"><div class="step-circle">✓</div><span class="step-label">모델 식별·PID 추천</span></a>
     <div class="step-sep done"></div>
-    <div class="step-item active"><div class="step-circle">4</div><span class="step-label">시뮬레이션</span></div>
+    <a class="step-item active" href="pid_tuning_screen4.html" style="text-decoration:none;"><div class="step-circle">4</div><span class="step-label">시뮬레이션</span></a>
     <div class="step-sep"></div>
-    <div class="step-item"><div class="step-circle">5</div><span class="step-label">Loop 진단</span></div>
+    <a class="step-item" href="pid_tuning_screen5.html" style="text-decoration:none;"><div class="step-circle">5</div><span class="step-label">Loop 진단</span></a>
   </div>
 
   <div class="page-title-row">
@@ -234,7 +234,7 @@ input[type=range].slider{width:100%;accent-color:#FF6B2B;height:4px;cursor:point
     <div style="display:flex;gap:8px">
       <button class="btn btn-outline btn-sm" onclick="resetToRecommended()">🔄 추천값으로 초기화</button>
       <button class="btn btn-outline btn-sm" onclick="exportChart()">📷 그래프 저장</button>
-      <button class="btn btn-orange btn-sm" onclick="showToast('→ Loop 진단으로 이동')">Loop 진단으로 →</button>
+      <button class="btn btn-orange btn-sm" onclick="location.href='pid_tuning_screen5.html'">Loop 진단으로 →</button>
     </div>
   </div>
 
@@ -439,8 +439,8 @@ input[type=range].slider{width:100%;accent-color:#FF6B2B;height:4px;cursor:point
     <strong id="ab-summary">추천 PID 시뮬레이션 완료</strong> &nbsp;—&nbsp; 결과를 확인하고 Loop 진단으로 이동하세요.
   </div>
   <div class="action-bar-right">
-    <button class="btn btn-outline" onclick="showToast('← 모델 식별·PID 추천으로 이동')">← 이전</button>
-    <button class="btn btn-orange" onclick="showToast('→ Loop 진단 화면으로 이동 (Screen 5 구현 예정)')">Loop 진단으로 이동 →</button>
+    <button class="btn btn-outline" onclick="location.href='pid_tuning_screen3.html'">← 이전</button>
+    <button class="btn btn-orange" onclick="location.href='pid_tuning_screen5.html'">Loop 진단으로 이동 →</button>
   </div>
 </div>
 
