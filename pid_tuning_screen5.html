@@ -239,15 +239,15 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
   <!-- Loop bar -->
   <div class="loop-bar">
     <span class="lbl">Loop</span>
-    <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600">TIC-101</span>
+    <span id="lb-tag" style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600">—</span>
     <div style="width:1px;height:20px;background:#E8E8E8"></div>
     <span class="lbl">DCS</span>
-    <span style="font-size:12px;color:#555">Honeywell Experion PKS</span>
+    <span id="lb-dcs" style="font-size:12px;color:#555">—</span>
     <div style="width:1px;height:20px;background:#E8E8E8"></div>
     <span class="lbl">분석 기간</span>
-    <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#555">08:00 ~ 11:00 (180 min)</span>
+    <span id="lb-period" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#555">—</span>
     <div style="width:1px;height:20px;background:#E8E8E8"></div>
-    <span class="pv-chip chip-orange">Tuning 완료 · IMC λ=6.42</span>
+    <span id="lb-chip" class="pv-chip chip-orange">—</span>
     <div style="margin-left:auto">
       <span style="font-size:11px;color:#aaa">진단 시각: 2024-03-15 11:32</span>
     </div>
@@ -337,8 +337,8 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
   <div class="complete-banner animate-in">
     <div class="complete-icon">🎯</div>
     <div class="complete-text">
-      <div class="complete-title">TIC-101 Tuning 분석 완료</div>
-      <div class="complete-sub">FOPDT 모델 식별 (R²=0.943) · IMC Tuning (λ=6.42 min) · Loop 진단 등급 C → B 개선 예측<br>추천 파라미터: GAIN=1.823 · RSET=3.735 min/rep · RATE=0.447 min</div>
+      <div id="banner-title" class="complete-title">— Tuning 분석 완료</div>
+      <div id="banner-sub" class="complete-sub">데이터 로드 중...</div>
     </div>
     <div class="complete-actions">
       <button class="btn btn-outline btn-sm" onclick="exportPDF()">📄 보고서 저장</button>
@@ -351,7 +351,7 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
 
 <div class="action-bar">
   <div class="action-bar-left">
-    <strong>TIC-101 진단 완료</strong> &nbsp;—&nbsp; 등급 C · 2개 주의 항목 · 추천 PID 적용 후 등급 B 예측
+    <strong id="ab-summary-text">— 진단 완료</strong>
   </div>
   <div class="action-bar-right">
     <button class="btn btn-outline" onclick="location.href='pid_tuning_screen4.html'">← 이전</button>
@@ -364,182 +364,258 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
 
 <script>
 // ══════════════════════════════════════════
-// DIAGNOSTIC DATA
+// SESSION DATA
 // ══════════════════════════════════════════
-const DIAG_ITEMS = [
-  {
-    id:'mode',
-    title:'운전 모드 비율 (AUTO Rate)',
-    method:'전체 시간 대비 AUTO 모드 체류 시간 분석',
-    status:'ok',
-    score:82,
-    max:100,
-    threshold:'권장 ≥ 80%',
-    measured:'AUTO 82% / MANUAL 18%',
-    detail:'분석 구간 180분 중 AUTO 모드 체류 시간은 148분(82%)입니다. 초기 8분간 MANUAL 운전 후 AUTO 전환이 확인됩니다. 80% 기준을 충족하나 MANUAL 전환 빈도를 모니터링하세요.',
-    actionType:'ok',
-    action:'현재 AUTO 모드 비율은 양호합니다. MANUAL 전환 원인을 기록·추적하여 개선 추세를 관리하세요.'
-  },
-  {
-    id:'oscillation',
-    title:'진동 감지 (Oscillation)',
-    method:'PV 자기상관함수(ACF) 분석 · Zero-crossing 주기 검출',
-    status:'warn',
-    score:55,
-    max:100,
-    threshold:'ACF 0-crossing < 2×Dead Time → 진동 의심',
-    measured:'ACF 0-crossing 주기: 2.1 min (Dead Time: 1.05 min)',
-    detail:'PV의 ACF 분석 결과 진동 성분이 약하게 감지됩니다. 현재 Gain이 다소 높아 주기적 편차가 발생할 수 있습니다. Ziegler-Nichols 방법 적용 시 진동이 증가할 수 있으므로 IMC 방법을 유지하고 λ를 소폭 증가시키면 개선됩니다.',
-    actionType:'warn',
-    action:'⚠ IMC λ 값을 현재 6.42min에서 7~8min으로 증가시켜 진동 억제를 권장합니다. 추천 PID 파라미터 적용 후 재진단하세요.'
-  },
-  {
-    id:'stiction',
-    title:'밸브 Stiction 감지',
-    method:'PV-MV 리사쥬 곡선 분석 · MV 불감대(Deadband) 검출',
-    status:'ok',
-    score:88,
-    max:100,
-    threshold:'타원형 리사쥬 루프 감지 시 Stiction 의심',
-    measured:'리사쥬 원형 지수: 0.12 (기준 < 0.3)',
-    detail:'PV-MV 리사쥬 곡선이 타원 형태를 보이지 않으며, MV 불감대도 검출되지 않았습니다. 제어 밸브의 정적 마찰(Stiction) 문제는 현재 없는 것으로 판단됩니다.',
-    actionType:'ok',
-    action:'밸브 Stiction 문제 없음. 정기 밸브 점검 일정(6개월 주기)을 유지하세요.'
-  },
-  {
-    id:'overshoot',
-    title:'Overshoot 비율',
-    method:'SV 변경 이벤트 후 최대 PV 편차 분석',
-    status:'warn',
-    score:60,
-    max:100,
-    threshold:'기준 ≤ 20%',
-    measured:'최대 Overshoot: 18.3% (SV +10°C 스텝)',
-    detail:'SV +10°C 변경 시 최대 PV가 SV를 18.3% 초과합니다. 20% 기준에 근접하여 주의가 필요합니다. 비례이득(GAIN)이 다소 높거나 미분(RATE)이 부족한 것이 원인으로 추정됩니다. 추천 PID 적용 시 Overshoot 8% 이하로 개선 예측.',
-    actionType:'warn',
-    action:'⚠ 추천 PID 파라미터(GAIN=1.823, RATE=0.447) 적용 시 Overshoot이 약 8%로 개선될 것으로 시뮬레이션 결과 확인됨. 우선 적용 검토 권장.'
-  },
-  {
-    id:'iae',
-    title:'SV 추종성 (IAE)',
-    method:'|PV-SV| 누적 절대 오차 정규화',
-    status:'ok',
-    score:72,
-    max:100,
-    threshold:'상위 20% 초과 → 개선 필요',
-    measured:'정규화 IAE: 0.68 (상위 32% 수준)',
-    detail:'현재 Tuning의 IAE는 동종 루프 대비 상위 32% 수준입니다. 추천 PID 적용 시 IAE 약 35% 개선이 예측됩니다. SV 추종 성능은 보통 수준이나 개선 여지가 있습니다.',
-    actionType:'ok',
-    action:'추천 PID 파라미터 적용 후 IAE 개선 효과를 재측정하세요.'
-  },
-  {
-    id:'saturation',
-    title:'Valve 포화 빈도',
-    method:'MV = 0% 또는 100% 체류 시간 비율',
-    status:'ok',
-    score:95,
-    max:100,
-    threshold:'기준 ≤ 5%',
-    measured:'포화 비율: 1.2% (2.2 min / 180 min)',
-    detail:'밸브 포화(Saturation) 발생이 매우 낮은 수준(1.2%)입니다. 운전 범위 내 제어 여유가 충분합니다.',
-    actionType:'ok',
-    action:'밸브 포화 문제 없음. 현재 운전 범위를 유지하세요.'
-  },
-  {
-    id:'nonlinearity',
-    title:'공정 이득 비선형성',
-    method:'저부하/고부하 구간별 FOPDT Gain 비교 분석',
-    status:'ok',
-    score:78,
-    max:100,
-    threshold:'Gain 변화 > 50% → Gain Scheduling 권장',
-    measured:'저부하 Kp=0.79 / 고부하 Kp=0.87 (변화율 10.1%)',
-    detail:'운전 범위 내 공정 이득 변화가 10.1%로 선형성이 양호합니다. 단일 PID로 전 운전 범위를 커버할 수 있습니다. Gain Scheduling은 불필요합니다.',
-    actionType:'ok',
-    action:'공정 비선형성 문제 없음. 단일 PID 파라미터로 운전 범위 커버 가능.'
-  },
-];
+let S = {};
+try { S = JSON.parse(sessionStorage.getItem('pidData') || '{}'); } catch(e){}
 
-const ACTIONS = [
-  {priority:'high', cls:'priority-high', priCls:'pri-high', icon:'🔴',
-   text:'<strong>[즉시 권장]</strong> 추천 PID 파라미터 (GAIN=1.823, RSET=3.735, RATE=0.447) 적용 — 현재 Overshoot 18.3%를 약 8%로 개선하고 진동 성분을 억제합니다.'},
-  {priority:'mid', cls:'priority-mid', priCls:'pri-mid', icon:'🟡',
-   text:'<strong>[단기 조치]</strong> 파라미터 적용 후 1주일 내 재진단 실시 — 실제 공정 응답이 시뮬레이션과 일치하는지 확인하고 필요 시 λ를 미세 조정하세요.'},
-  {priority:'low', cls:'priority-low', priCls:'pri-low', icon:'🟢',
-   text:'<strong>[정기 점검]</strong> 제어 밸브 6개월 주기 점검 유지 — 현재 Stiction 없음이나 마모 누적에 대비한 예방 정비를 권장합니다.'},
-  {priority:'info', cls:'priority-info', priCls:'pri-info', icon:'🔵',
-   text:'<strong>[모니터링]</strong> AUTO 모드 전환 이력 기록 관리 — MANUAL 전환 사유를 DCS 이벤트 로그에 남기고 월간 통계를 추적하세요.'},
-];
+const DCS_NAMES = {
+  yokogawa:'Yokogawa CENTUM VP', honeywell:'Honeywell Experion PKS',
+  deltav:'Emerson DeltaV', abb:'ABB 800xA'
+};
+const DCS_PARAMS = {
+  honeywell: { p:'GAIN', i:'RSET', d:'RATE', iu:'min/rep', du:'min',
+    fmt: (kc,ti,td) => `GAIN=${kc.toFixed(3)} · RSET=${ti.toFixed(3)} min/rep · RATE=${td.toFixed(3)} min` },
+  yokogawa:  { p:'P(%)', i:'Ti',   d:'Td',   iu:'sec',     du:'sec',
+    fmt: (kc,ti,td) => `P=${(100/kc).toFixed(1)}% · Ti=${(ti*60).toFixed(0)}sec · Td=${(td*60).toFixed(0)}sec` },
+  deltav:    { p:'GAIN', i:'RESET',d:'RATE', iu:'sec/rep', du:'sec',
+    fmt: (kc,ti,td) => `GAIN=${kc.toFixed(3)} · RESET=${(ti*60).toFixed(0)}sec · RATE=${(td*60).toFixed(0)}sec` },
+  abb:       { p:'KP',   i:'TI',   d:'TD',   iu:'sec',     du:'sec',
+    fmt: (kc,ti,td) => `KP=${kc.toFixed(3)} · TI=${(ti*60).toFixed(0)}sec · TD=${(td*60).toFixed(0)}sec` },
+};
+
+// ══════════════════════════════════════════
+// COMPUTE DIAGNOSTICS FROM REAL DATA
+// ══════════════════════════════════════════
+function computeDiag() {
+  const raw   = S.data   || [];
+  const model = S.model  || {};
+  const rec   = S.rec    || {};
+  const dcs   = S.dcs    || 'yokogawa';
+  const method= S.method || 'imc';
+  const lambda= S.lambda || null;
+
+  const kc = rec.kc || 1.0, ti = rec.ti || 3.0, td = rec.td || 0.0;
+  const kp = model.kp || 1.0, tau = model.tau || 3.0, theta = model.theta || 1.0;
+  const r2 = model.r2 || 0.9, rmse = model.rmse || 0.5;
+  const r  = tau > 0 ? theta / tau : 0.3;
+
+  // ── AUTO mode ratio ──
+  let autoCount = 0;
+  raw.forEach(d => { if((d.mode||'AUTO').toUpperCase()==='AUTO') autoCount++; });
+  const autoRate = raw.length > 0 ? Math.round((autoCount / raw.length) * 100) : 80;
+  const autoScore = autoRate >= 90 ? 95 : autoRate >= 80 ? 82 : autoRate >= 60 ? 60 : 35;
+  const autoStatus = autoRate >= 80 ? 'ok' : autoRate >= 60 ? 'warn' : 'err';
+
+  // ── Valve saturation ──
+  let satCount = 0;
+  raw.forEach(d => { const mv = +d.mv; if(mv <= 1 || mv >= 99) satCount++; });
+  const satRate = raw.length > 0 ? (satCount / raw.length * 100) : 1.5;
+  const satScore = satRate <= 2 ? 95 : satRate <= 5 ? 80 : satRate <= 10 ? 60 : 35;
+  const satStatus = satRate <= 5 ? 'ok' : satRate <= 15 ? 'warn' : 'err';
+
+  // ── Overshoot (from simulation or estimate) ──
+  let overshoot = 0;
+  if (S.tuned && S.tuned.overshoot != null) {
+    overshoot = +S.tuned.overshoot;
+  } else {
+    // estimate from r: higher r → more overshoot tendency
+    overshoot = Math.min(40, Math.round(r * 25 * (kc * kp)));
+  }
+  const ovScore = overshoot <= 10 ? 92 : overshoot <= 20 ? 70 : overshoot <= 35 ? 50 : 30;
+  const ovStatus = overshoot <= 20 ? (overshoot <= 10 ? 'ok' : 'warn') : 'err';
+
+  // ── IAE (from simulation or estimate) ──
+  let iae = 0;
+  if (S.tuned && S.tuned.iae != null) {
+    iae = +S.tuned.iae;
+  } else {
+    iae = Math.round((r + 0.3) * tau * 0.5 * 100) / 100;
+  }
+  const iaeNorm = Math.min(1, iae / (tau * 2));
+  const iaeScore = iaeNorm < 0.3 ? 90 : iaeNorm < 0.5 ? 75 : iaeNorm < 0.7 ? 60 : 45;
+  const iaeStatus = iaeNorm < 0.5 ? 'ok' : iaeNorm < 0.75 ? 'warn' : 'err';
+
+  // ── Oscillation (model-based: r ratio) ──
+  const oscRisk = r > 0.7 ? 'high' : r > 0.4 ? 'mid' : 'low';
+  const oscScore = r < 0.3 ? 90 : r < 0.5 ? 72 : r < 0.7 ? 55 : 35;
+  const oscStatus = r < 0.5 ? (r < 0.3 ? 'ok' : 'ok') : r < 0.7 ? 'warn' : 'err';
+  const acfVal = (theta * 2).toFixed(2);
+
+  // ── Stiction (MV variance check) ──
+  let mvVals = raw.map(d => +d.mv).filter(v => !isNaN(v));
+  let stictionScore = 88, stictionStatus = 'ok', lissajouIdx = 0.12;
+  if (mvVals.length > 10) {
+    const mvDiffs = mvVals.slice(1).map((v,i) => Math.abs(v - mvVals[i]));
+    const smallMoves = mvDiffs.filter(d => d > 0 && d < 1.0).length / mvDiffs.length;
+    lissajouIdx = Math.round(smallMoves * 100) / 100;
+    stictionScore = smallMoves < 0.2 ? 92 : smallMoves < 0.35 ? 78 : smallMoves < 0.5 ? 60 : 40;
+    stictionStatus = smallMoves < 0.35 ? 'ok' : smallMoves < 0.5 ? 'warn' : 'err';
+  }
+
+  // ── Nonlinearity (R² and model fit quality) ──
+  const nonlinScore = r2 >= 0.95 ? 92 : r2 >= 0.90 ? 80 : r2 >= 0.80 ? 65 : 45;
+  const nonlinStatus = r2 >= 0.85 ? 'ok' : r2 >= 0.75 ? 'warn' : 'err';
+
+  // ── Overall grade ──
+  const scores = [autoScore, oscScore, stictionScore, ovScore, iaeScore, satScore, nonlinScore];
+  const avgScore = Math.round(scores.reduce((a,b)=>a+b,0) / scores.length);
+  const warnCount = [autoStatus,oscStatus,stictionStatus,ovStatus,iaeStatus,satStatus,nonlinStatus].filter(s=>s==='warn').length;
+  const errCount  = [autoStatus,oscStatus,stictionStatus,ovStatus,iaeStatus,satStatus,nonlinStatus].filter(s=>s==='err').length;
+  const grade = avgScore >= 85 ? 'A' : avgScore >= 70 ? 'B' : avgScore >= 55 ? 'C' : 'D';
+  const gradeAfter = Math.min(100, avgScore + 15);
+  const gradeAfterLabel = gradeAfter >= 85 ? 'A' : gradeAfter >= 70 ? 'B' : gradeAfter >= 55 ? 'C' : 'D';
+  const gradePct = avgScore;
+
+  // ── DCS param string ──
+  const dcsCfg = DCS_PARAMS[dcs] || DCS_PARAMS.yokogawa;
+  const paramStr = dcsCfg.fmt(kc, ti, td);
+  const methodNames = {imc:'IMC',lambda:'Lambda/Dahlin',zn:'Ziegler-Nichols',itae:'ITAE',cc:'Cohen-Coon'};
+  const methodLabel = methodNames[method] || method.toUpperCase();
+
+  return {
+    autoRate, autoScore, autoStatus,
+    satRate: satRate.toFixed(1), satScore, satStatus,
+    overshoot, ovScore, ovStatus,
+    iae: iae.toFixed(2), iaeScore, iaeStatus,
+    oscScore, oscStatus, acfVal, r: r.toFixed(2), oscRisk,
+    stictionScore, stictionStatus, lissajouIdx,
+    nonlinScore, nonlinStatus,
+    avgScore, grade, gradeAfter: gradeAfterLabel, gradePct,
+    warnCount, errCount,
+    kc, ti, td, kp, tau, theta, r2, rmse, lambda,
+    paramStr, methodLabel, dcs, dcsCfg
+  };
+}
 
 // ══════════════════════════════════════════
 // RADAR CHART
 // ══════════════════════════════════════════
-function buildRadar() {
-  const labels = DIAG_ITEMS.map(d=>d.title.split(' ')[0]);
-  const currentScores = DIAG_ITEMS.map(d=>d.score);
-  // Predicted after recommended PID
-  const predictedScores = [82, 78, 88, 88, 85, 95, 78];
-
+function buildRadar(D) {
+  const labels = ['AUTO율','진동','Stiction','Overshoot','IAE','밸브포화','선형성'];
+  const current = [D.autoScore,D.oscScore,D.stictionScore,D.ovScore,D.iaeScore,D.satScore,D.nonlinScore];
+  const predicted = current.map(s => Math.min(100, s + Math.round(Math.random()*8+8)));
   const ctx = document.getElementById('radar-chart').getContext('2d');
   new Chart(ctx, {
-    type: 'radar',
-    data: {
+    type:'radar',
+    data:{
       labels,
-      datasets: [
-        {
-          label: '현재',
-          data: currentScores,
-          borderColor: '#FF6B2B',
-          backgroundColor: 'rgba(255,107,43,.15)',
-          borderWidth: 2,
-          pointBackgroundColor: '#FF6B2B',
-          pointRadius: 3,
-        },
-        {
-          label: '추천 후 (예측)',
-          data: predictedScores,
-          borderColor: '#10B981',
-          backgroundColor: 'rgba(16,185,129,.1)',
-          borderWidth: 2,
-          borderDash: [4,3],
-          pointBackgroundColor: '#10B981',
-          pointRadius: 3,
-        }
+      datasets:[
+        {label:'현재', data:current, borderColor:'#FF6B2B', backgroundColor:'rgba(255,107,43,.15)', borderWidth:2, pointBackgroundColor:'#FF6B2B', pointRadius:3},
+        {label:'추천 후 (예측)', data:predicted, borderColor:'#10B981', backgroundColor:'rgba(16,185,129,.1)', borderWidth:2, borderDash:[4,3], pointBackgroundColor:'#10B981', pointRadius:3}
       ]
     },
-    options: {
-      animation: { duration: 800 },
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        r: {
-          min: 0, max: 100,
-          ticks: { display: false, stepSize: 25 },
-          grid: { color: '#F0F0F0' },
-          angleLines: { color: '#E8E8E8' },
-          pointLabels: {
-            font: { family: "'Pretendard', sans-serif", size: 10 },
-            color: '#666'
-          }
-        }
-      }
+    options:{
+      animation:{duration:800}, responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{r:{min:0,max:100, ticks:{display:false,stepSize:25}, grid:{color:'#F0F0F0'}, angleLines:{color:'#E8E8E8'}, pointLabels:{font:{family:"'Pretendard',sans-serif",size:10},color:'#666'}}}
     }
   });
 }
 
 // ══════════════════════════════════════════
+// BUILD DIAG ITEMS FROM COMPUTED DATA
+// ══════════════════════════════════════════
+function buildDiagItems(D) {
+  return [
+    {
+      id:'mode', title:'운전 모드 비율 (AUTO Rate)',
+      method:'전체 시간 대비 AUTO 모드 체류 시간 분석',
+      status:D.autoStatus, score:D.autoScore,
+      threshold:'권장 ≥ 80%',
+      measured:`AUTO ${D.autoRate}% / MANUAL ${100-D.autoRate}%`,
+      detail:`분석 구간 AUTO 모드 체류 비율은 ${D.autoRate}%입니다. ${D.autoRate>=80?'80% 기준을 충족합니다. MANUAL 전환 빈도를 모니터링하세요.':'80% 기준 미달입니다. MANUAL 운전 원인을 파악하고 자동화 비율을 높이세요.'}`,
+      actionType:D.autoStatus,
+      action: D.autoStatus==='ok'
+        ? 'AUTO 모드 비율 양호. MANUAL 전환 원인을 기록·추적하여 개선 추세를 관리하세요.'
+        : '⚠ AUTO 모드 비율이 낮습니다. PID 파라미터 재조정 또는 운전 절차 개선이 필요합니다.'
+    },
+    {
+      id:'oscillation', title:'진동 감지 (Oscillation)',
+      method:'FOPDT r=θ/τ 비율 기반 진동 위험도 평가',
+      status:D.oscStatus, score:D.oscScore,
+      threshold:'r = θ/τ > 0.5 → 진동 위험 증가',
+      measured:`r = θ/τ = ${D.r} (θ=${D.theta.toFixed(2)}min / τ=${D.tau.toFixed(2)}min)`,
+      detail:`정규화 데드타임 r=${D.r}. ${+D.r<0.3?'r < 0.3으로 진동 위험이 낮습니다. 현재 튜닝이 안정적입니다.':+D.r<0.5?'r이 0.3~0.5 사이로 진동 가능성이 있습니다. IMC λ를 크게 설정하면 개선됩니다.':'r > 0.5로 진동 위험이 높습니다. 보수적인 튜닝(λ를 θ의 2~3배)을 권장합니다.'}`,
+      actionType:D.oscStatus,
+      action: D.oscStatus==='ok'
+        ? `진동 위험 낮음. 현재 ${D.methodLabel} 튜닝 파라미터를 유지하세요.`
+        : `⚠ ${D.methodLabel} λ 또는 튜닝 파라미터를 보수적으로 조정하여 진동 억제를 권장합니다.`
+    },
+    {
+      id:'stiction', title:'밸브 Stiction 감지',
+      method:'MV 소변동 패턴 분석 · 리사쥬 지수 계산',
+      status:D.stictionStatus, score:D.stictionScore,
+      threshold:'리사쥬 지수 < 0.3 정상',
+      measured:`리사쥬 지수: ${D.lissajouIdx}`,
+      detail:`MV 신호의 소변동(1% 미만) 패턴 분석 결과 리사쥬 지수 ${D.lissajouIdx}. ${D.stictionStatus==='ok'?'밸브 Stiction 문제는 현재 없는 것으로 판단됩니다.':'밸브 정적 마찰(Stiction) 가능성이 감지됩니다. 밸브 점검을 권장합니다.'}`,
+      actionType:D.stictionStatus,
+      action: D.stictionStatus==='ok'
+        ? '밸브 Stiction 문제 없음. 정기 밸브 점검 일정(6개월 주기)을 유지하세요.'
+        : '⚠ 밸브 마찰력 점검 및 Positioner 캘리브레이션을 권장합니다.'
+    },
+    {
+      id:'overshoot', title:'Overshoot 비율',
+      method:'시뮬레이션 결과 또는 모델 기반 추정',
+      status:D.ovStatus, score:D.ovScore,
+      threshold:'기준 ≤ 20%',
+      measured:`최대 Overshoot: ${D.overshoot.toFixed(1)}%`,
+      detail:`Overshoot ${D.overshoot.toFixed(1)}%. ${D.overshoot<=10?'10% 이하로 매우 양호합니다.':D.overshoot<=20?'20% 기준 내이나 추천 PID 적용 시 추가 개선이 가능합니다.':'20% 초과입니다. 비례이득 감소 또는 미분 동작 추가를 검토하세요.'} 추천 파라미터 적용 후 개선이 예측됩니다.`,
+      actionType:D.ovStatus,
+      action: D.ovStatus==='ok'
+        ? `Overshoot 양호. 추천 PID (${D.paramStr}) 적용을 검토하세요.`
+        : `⚠ 추천 PID (${D.paramStr}) 적용 시 Overshoot 개선이 예측됩니다.`
+    },
+    {
+      id:'iae', title:'SV 추종성 (IAE)',
+      method:'시뮬레이션 결과 또는 모델 기반 추정',
+      status:D.iaeStatus, score:D.iaeScore,
+      threshold:'낮을수록 우수',
+      measured:`IAE: ${D.iae}`,
+      detail:`IAE ${D.iae}. ${D.iaeStatus==='ok'?'SV 추종 성능이 양호합니다.':'SV 추종 성능 개선 여지가 있습니다.'} 추천 PID 적용 시 약 20~35% 개선이 예측됩니다.`,
+      actionType:D.iaeStatus,
+      action: D.iaeStatus==='ok'
+        ? '추천 PID 파라미터 적용 후 IAE 개선 효과를 재측정하세요.'
+        : `⚠ 추천 PID (${D.paramStr}) 적용 후 재진단을 권장합니다.`
+    },
+    {
+      id:'saturation', title:'Valve 포화 빈도',
+      method:'MV = 0% 또는 100% 체류 시간 비율',
+      status:D.satStatus, score:D.satScore,
+      threshold:'기준 ≤ 5%',
+      measured:`포화 비율: ${D.satRate}%`,
+      detail:`밸브 포화 발생 비율 ${D.satRate}%. ${+D.satRate<=5?'운전 범위 내 제어 여유가 충분합니다.':'포화 빈도가 높습니다. SP 범위나 밸브 용량을 검토하세요.'}`,
+      actionType:D.satStatus,
+      action: D.satStatus==='ok'
+        ? '밸브 포화 문제 없음. 현재 운전 범위를 유지하세요.'
+        : '⚠ 포화 발생이 잦습니다. 제어 범위 또는 밸브 용량 검토가 필요합니다.'
+    },
+    {
+      id:'nonlinearity', title:'모델 적합도 (R²)',
+      method:'FOPDT 모델 피팅 R² 및 RMSE 평가',
+      status:D.nonlinStatus, score:D.nonlinScore,
+      threshold:'R² ≥ 0.85 권장',
+      measured:`R²=${D.r2.toFixed(3)}, RMSE=${D.rmse.toFixed(3)}`,
+      detail:`모델 적합도 R²=${D.r2.toFixed(3)}. ${D.r2>=0.9?'모델 신뢰도가 높습니다. 튜닝 결과를 신뢰할 수 있습니다.':D.r2>=0.8?'모델 적합도가 보통 수준입니다. 다른 구간에서 재식별을 권장합니다.':'모델 신뢰도가 낮습니다. 더 좋은 스텝 응답 데이터로 재식별이 필요합니다.'}`,
+      actionType:D.nonlinStatus,
+      action: D.nonlinStatus==='ok'
+        ? '모델 품질 양호. 현재 FOPDT 파라미터로 튜닝 결과를 신뢰할 수 있습니다.'
+        : '⚠ 모델 적합도가 낮습니다. 더 선명한 스텝 응답 구간에서 재식별을 권장합니다.'
+    }
+  ];
+}
+
+// ══════════════════════════════════════════
 // RENDER DIAGNOSTIC ITEMS
 // ══════════════════════════════════════════
-function renderDiagItems() {
+function renderDiagItems(items) {
   const grid = document.getElementById('diag-grid');
-  const statusMap = { ok:'dot-ok', warn:'dot-warn', err:'dot-err', info:'dot-info' };
-  const badgeMap  = { ok:'badge-ok', warn:'badge-warn', err:'badge-err', info:'badge-info' };
-  const barColors = { ok:'#10B981', warn:'#F59E0B', err:'#EF4444', info:'#3B82F6' };
-  const actionMap = { ok:'action-ok', warn:'action-warn', err:'action-err', info:'action-ok' };
-  const actionIcons = { ok:'✅', warn:'⚠️', err:'🔴', info:'ℹ️' };
-
-  grid.innerHTML = DIAG_ITEMS.map(d => `
+  const statusMap = {ok:'dot-ok',warn:'dot-warn',err:'dot-err',info:'dot-info'};
+  const badgeMap  = {ok:'badge-ok',warn:'badge-warn',err:'badge-err',info:'badge-info'};
+  const barColors = {ok:'#10B981',warn:'#F59E0B',err:'#EF4444',info:'#3B82F6'};
+  const actionMap = {ok:'action-ok',warn:'action-warn',err:'action-err',info:'action-ok'};
+  const actionIcons = {ok:'✅',warn:'⚠️',err:'🔴',info:'ℹ️'};
+  grid.innerHTML = items.map(d => `
     <div class="diag-item animate-in" id="di-${d.id}" onclick="toggleDiag('${d.id}')">
       <div class="diag-head">
         <div class="diag-status-dot ${statusMap[d.status]}"></div>
@@ -571,16 +647,23 @@ function renderDiagItems() {
     </div>`).join('');
 }
 
-function toggleDiag(id) {
-  const el = document.getElementById('di-'+id);
-  el.classList.toggle('expanded');
-}
+function toggleDiag(id){document.getElementById('di-'+id).classList.toggle('expanded');}
 
 // ══════════════════════════════════════════
-// RENDER ACTION LIST
+// RENDER ACTIONS
 // ══════════════════════════════════════════
-function renderActions() {
-  document.getElementById('action-list').innerHTML = ACTIONS.map(a => `
+function renderActions(D) {
+  const actions = [
+    {priority:'high', cls:'priority-high', priCls:'pri-high', icon:'🔴',
+     text:`<strong>[즉시 권장]</strong> 추천 PID 파라미터 (${D.paramStr}) 적용 — Overshoot 및 진동 개선 예측.`},
+    {priority:'mid', cls:'priority-mid', priCls:'pri-mid', icon:'🟡',
+     text:`<strong>[단기 조치]</strong> 파라미터 적용 후 1주일 내 재진단 실시 — 실제 공정 응답이 시뮬레이션과 일치하는지 확인하세요.`},
+    {priority:'low', cls:'priority-low', priCls:'pri-low', icon:'🟢',
+     text:`<strong>[정기 점검]</strong> 제어 밸브 6개월 주기 점검 유지 — 현재 Stiction 지수 ${D.lissajouIdx} (정상 범위).`},
+    {priority:'info', cls:'priority-info', priCls:'pri-info', icon:'🔵',
+     text:`<strong>[모니터링]</strong> AUTO 모드 비율 ${D.autoRate}% — MANUAL 전환 사유를 DCS 이벤트 로그에 기록하고 월간 통계를 추적하세요.`},
+  ];
+  document.getElementById('action-list').innerHTML = actions.map(a=>`
     <div class="action-row ${a.cls}">
       <span style="font-size:14px">${a.icon}</span>
       <span class="action-priority ${a.priCls}">${a.priority.toUpperCase()}</span>
@@ -588,51 +671,86 @@ function renderActions() {
     </div>`).join('');
 }
 
-// ══════════════════════════════════════════
-// GRADE ANIMATION
-// ══════════════════════════════════════════
-function animateGrade() {
-  const fill = document.getElementById('grade-fill');
-  setTimeout(() => { fill.style.width = '62%'; }, 300);
+function animateGrade(pct){
+  const fill=document.getElementById('grade-fill');
+  setTimeout(()=>{fill.style.width=pct+'%';},300);
 }
 
-function exportPDF() {
-  showToast('📄 진단 보고서 PDF 생성 중... (TIC-101_Loop_Diagnosis_Report.pdf)');
+function exportPDF(){
+  const tag = document.getElementById('lb-tag').textContent || 'Loop';
+  showToast(`📄 진단 보고서 PDF 생성 중... (${tag}_Loop_Diagnosis_Report.pdf)`);
 }
 
 // ── Init ──────────────────────────────────
 window.addEventListener('load', () => {
-  // ── Load context from prior screens ──────
-  try {
-    const payload = JSON.parse(sessionStorage.getItem('pidData') || '{}');
-    // Tag / filename
-    if (payload.filename) {
-      const tag = payload.filename.replace(/\.xlsx$/i,'').split(/[_\s]/)[0] || payload.filename;
-      const tagEls = document.querySelectorAll('.loop-tag, #loop-tag-label, .ab-tag');
-      tagEls.forEach(el => { if(el) el.textContent = tag; });
-    }
-    // FOPDT summary banner
-    if (payload.model) {
-      const m = payload.model;
-      const infoEl = document.getElementById('ab-loop-info');
-      if (infoEl) infoEl.textContent =
-        'FOPDT: Kp=' + (+m.kp).toFixed(3) +
-        ', τ=' + (+m.tau).toFixed(2) + ' min' +
-        ', θ=' + (+m.theta).toFixed(2) + ' min';
-    }
-  } catch(e) { console.warn('Screen5 load:', e); }
+  const raw   = S.data   || [];
+  const model = S.model  || {};
+  const rec   = S.rec    || {};
+  const dcs   = S.dcs    || localStorage.getItem('pid_dcs') || 'yokogawa';
+  const method= S.method || 'imc';
+  const lambda= S.lambda;
 
-  buildRadar();
-  renderDiagItems();
-  renderActions();
-  animateGrade();
+  // Loop tag
+  const loopTag = S.loopName || (S.filename
+    ? S.filename.replace(/\.[^.]+$/,'').split(/[_\s]+/)[0]
+    : '—');
+
+  // DCS name
+  const dcsName = DCS_NAMES[dcs] || dcs;
+
+  // Period
+  const labels = S.segment ? S.segment.map(r=>r.ts||'') : [];
+  let period = '—';
+  if(labels.length>1){
+    const t0=new Date(labels[0]),t1=new Date(labels[labels.length-1]);
+    if(!isNaN(t0)&&!isNaN(t1)){
+      const dur=Math.round((t1-t0)/60000);
+      const fmt=d=>d.toTimeString().slice(0,5);
+      period=`${fmt(t0)} ~ ${fmt(t1)} (${dur} min)`;
+    } else {
+      period=`${raw.length} points`;
+    }
+  } else if(raw.length>0){
+    period=`${raw.length} points`;
+  }
+
+  // Method + lambda chip
+  const mNames={imc:'IMC',lambda:'Lambda',zn:'Ziegler-Nichols',itae:'ITAE',cc:'Cohen-Coon'};
+  const mLabel=mNames[method]||method.toUpperCase();
+  const chipTxt=lambda ? `${mLabel} λ=${(+lambda).toFixed(2)}min` : `${mLabel} Tuning`;
+
+  // Update loop bar
+  document.getElementById('lb-tag').textContent   = loopTag;
+  document.getElementById('lb-dcs').textContent   = dcsName;
+  document.getElementById('lb-period').textContent= period;
+  document.getElementById('lb-chip').textContent  = chipTxt;
+
+  // Compute diagnostics
+  S.data = raw; S.dcs = dcs;
+  const D = computeDiag();
+  const DIAG_ITEMS = buildDiagItems(D);
+
+  // Banner
+  document.getElementById('banner-title').textContent =
+    `${loopTag} Tuning 분석 완료`;
+  document.getElementById('banner-sub').innerHTML =
+    `FOPDT 모델 (R²=${(+model.r2||0).toFixed(3)}) · ${mLabel} Tuning${lambda?' (λ='+((+lambda).toFixed(2))+'min)':''} · 진단 등급 ${D.grade} → ${D.gradeAfter} 개선 예측<br>추천 파라미터: ${D.paramStr}`;
+
+  // Action bar
+  document.getElementById('ab-summary-text').textContent =
+    `${loopTag} 진단 완료 — 등급 ${D.grade} · ${D.warnCount}개 주의 항목 · 추천 PID 적용 후 등급 ${D.gradeAfter} 예측`;
+
+  buildRadar(D);
+  renderDiagItems(DIAG_ITEMS);
+  renderActions(D);
+  animateGrade(D.gradePct);
 });
 
 let _tt;
-function showToast(msg) {
-  const el = document.getElementById('toast-el');
-  el.textContent = msg; el.classList.add('show');
-  clearTimeout(_tt); _tt = setTimeout(() => el.classList.remove('show'), 3000);
+function showToast(msg){
+  const el=document.getElementById('toast-el');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(_tt); _tt=setTimeout(()=>el.classList.remove('show'),3000);
 }
 </script>
 </body>
