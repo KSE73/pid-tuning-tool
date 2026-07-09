@@ -26,6 +26,7 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
+    padding-top: 48px;
     font-family: 'Pretendard', -apple-system, sans-serif;
     background: var(--bg);
     color: var(--text);
@@ -76,8 +77,8 @@
     border-right: 1px solid var(--border);
     padding: 20px 0;
     position: sticky;
-    top: 52px;
-    height: calc(100vh - 52px);
+    top: 48px;
+    height: calc(100vh - 48px);
     overflow-y: auto;
     flex-shrink: 0;
   }
@@ -243,20 +244,42 @@
     .navbar { position: static; }
     .formula-card { break-inside: avoid; }
   }
+
+  /* ── Standard g-topbar (shared nav) ── */
+  .g-topbar{position:fixed;top:0;left:0;right:0;z-index:200;height:48px;background:#1C1C1E;display:flex;align-items:center;padding:0 16px}
+  .g-logo{display:flex;align-items:center;gap:8px;padding-right:20px;border-right:1px solid #333;margin-right:4px;text-decoration:none}
+  .g-logo-icon{width:28px;height:28px;background:#FF6B2B;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:800}
+  .g-logo-name{color:#fff;font-size:14px;font-weight:700}
+  .g-nav{display:flex;align-items:center;flex:1}
+  .g-nav-item{height:48px;display:flex;align-items:center;padding:0 14px;color:#999;font-size:13px;font-weight:500;cursor:pointer;text-decoration:none;white-space:nowrap}
+  .g-nav-item:hover{color:#ddd}
+  .g-nav-item.pill{background:#FF6B2B;color:#fff;border-radius:20px;height:28px;padding:0 14px;margin:0 2px}
+  .g-topbar-right{display:flex;align-items:center;gap:10px;margin-left:auto}
+  .g-icon-btn{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:15px;cursor:pointer;background:none;border:none}
+  .g-avatar{width:30px;height:30px;background:#444;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#ccc;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid #555}
 </style>
 </head>
 <body>
 
-<!-- Navbar -->
-<nav class="navbar">
-  <div class="logo">
-    <div class="logo-icon">⚙</div>
-    PID Tuning Tool
+<!-- Standard Top Nav -->
+<header class="g-topbar">
+  <a class="g-logo" href="index.html">
+    <div class="g-logo-icon">P</div>
+    <span class="g-logo-name">PID Tuning Tool</span>
+  </a>
+  <nav class="g-nav">
+    <a class="g-nav-item" href="pid_tuning_screen1.html">데이터 관리</a>
+    <a class="g-nav-item" href="pid_tuning_screen3.html">Tuning 작업</a>
+    <a class="g-nav-item" href="pid_tuning_screen5.html">Loop 진단</a>
+    <a class="g-nav-item pill" href="pid_tuning_formulas.html">계산 기준</a>
+    <a class="g-nav-item" href="#">설정</a>
+  </nav>
+  <div class="g-topbar-right">
+    <button class="g-icon-btn">🔔</button>
+    <button class="g-icon-btn">❓</button>
+    <div class="g-avatar">ENG</div>
   </div>
-  <span class="sep">›</span>
-  <span class="subtitle">공식 레퍼런스 문서</span>
-  <span class="pill">Formula Reference v1.0</span>
-</nav>
+</header>
 
 <div class="layout">
 
