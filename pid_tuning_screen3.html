@@ -798,6 +798,16 @@ function selectMethod(m, el){
   const methodNames={imc:'IMC (Internal Model Control)',lambda:'Lambda / Dahlin',zn:'Ziegler-Nichols Step Response',itae:'ITAE 최적화',cc:'Cohen-Coon',manual:'수동 입력'};
   document.getElementById('b-method').textContent=methodNames[m]||m;
   renderDCSParams();
+  // Method 변경 즉시 sessionStorage에 저장 (Screen4에서 사용)
+  try {
+    const prev = JSON.parse(sessionStorage.getItem('pidData') || '{}');
+    prev.method = METHOD;
+    if (MODEL.kp !== null) {
+      const {Kc,Ti,Td} = calcPID(METHOD, MODEL.kp, MODEL.tau, MODEL.theta, LAMBDA);
+      prev.rec = { kc: Kc, ti: Ti, td: Td };
+    }
+    sessionStorage.setItem('pidData', JSON.stringify(prev));
+  } catch(e) { console.warn('method save:', e); }
   showToast('✅ '+methodNames[m]+' 방법 선택됨');
 }
 
@@ -805,6 +815,12 @@ function recalc(){
   DCS=document.getElementById('dcs-sel').value;
   localStorage.setItem('pid_dcs', DCS);
   renderDCSParams();
+  // DCS 변경 즉시 sessionStorage에도 저장
+  try {
+    const prev = JSON.parse(sessionStorage.getItem('pidData') || '{}');
+    prev.dcs = DCS;
+    sessionStorage.setItem('pidData', JSON.stringify(prev));
+  } catch(e) {}
   showToast('✅ '+DCS_DEFS[DCS].name+' 형식으로 변환됨');
 }
 

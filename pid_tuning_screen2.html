@@ -275,8 +275,8 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
     <div class="loop-sep"></div>
     <span class="loop-bar-label">DCS</span>
     <select class="dcs-select" id="dcs-type">
-      <option value="honeywell">Honeywell Experion PKS</option>
       <option value="yokogawa">Yokogawa CENTUM VP</option>
+      <option value="honeywell">Honeywell Experion PKS</option>
       <option value="deltav">Emerson DeltaV</option>
       <option value="abb">ABB 800xA</option>
     </select>
@@ -887,6 +887,8 @@ function goNext(){
     prev.segment = segData;
     prev.selStart = s;
     prev.selEnd   = e;
+    prev.dcs = document.getElementById('dcs-type').value;
+    localStorage.setItem('pid_dcs', prev.dcs);
     sessionStorage.setItem('pidData', JSON.stringify(prev));
   } catch(err) { console.warn('segment save fail:', err); }
   location.href = 'pid_tuning_screen3.html';
@@ -896,6 +898,11 @@ function goNext(){
 // INIT
 // ══════════════════════════════════════════
 window.addEventListener('load',()=>{
+  // DCS 선택 복원
+  const _payload = JSON.parse(sessionStorage.getItem('pidData') || '{}');
+  const _savedDcs = _payload.dcs || localStorage.getItem('pid_dcs') || 'yokogawa';
+  const _dcsEl = document.getElementById('dcs-type');
+  if (_dcsEl) _dcsEl.value = _savedDcs;
   try {
     const raw = sessionStorage.getItem('pidData');
     if (raw) {

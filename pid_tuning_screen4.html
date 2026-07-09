@@ -740,10 +740,11 @@ window.addEventListener('load', () => {
     // Source tag
     if (payload.model) {
       const m = payload.model;
-      const method = payload.method || '';
+      const methodNames = {imc:'IMC',lambda:'Lambda/Dahlin',zn:'Ziegler-Nichols',itae:'ITAE',cc:'Cohen-Coon',manual:'수동입력'};
+      const methodLabel = methodNames[payload.method] || (payload.method||'').toUpperCase() || 'IMC';
       document.getElementById('ab-summary').textContent =
         'FOPDT: Kp=' + (+m.kp).toFixed(3) + ', τ=' + (+m.tau).toFixed(2) +
-        ' min, θ=' + (+m.theta).toFixed(2) + ' min  |  방법: ' + method.toUpperCase();
+        ' min, θ=' + (+m.theta).toFixed(2) + ' min  |  Tuning: ' + methodLabel;
     }
   } catch(e) { console.warn('Screen4 load error:', e); }
 
