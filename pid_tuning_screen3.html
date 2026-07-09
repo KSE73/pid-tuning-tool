@@ -544,8 +544,8 @@ const DCS_DEFS = {
     name:'Honeywell Experion PKS',
     params:[
       {key:'P', dcsName:'GAIN',  unit:'',                  prev:1.50},
-      {key:'I', dcsName:'RSET',  unit:'sec/rep',           prev:192},
-      {key:'D', dcsName:'RATE',  unit:'sec',               prev:0},
+      {key:'I', dcsName:'RSET',  unit:'min/rep',           prev:3.20},
+      {key:'D', dcsName:'RATE',  unit:'min',               prev:0.00},
     ]
   },
   yokogawa: {
@@ -561,7 +561,7 @@ const DCS_DEFS = {
     params:[
       {key:'P', dcsName:'GAIN',  unit:'(무단위)',          prev:1.50},
       {key:'I', dcsName:'RESET', unit:'sec/repeat',        prev:192},
-      {key:'D', dcsName:'RATE',  unit:'sec',               prev:0},
+      {key:'D', dcsName:'RATE',  unit:'min',               prev:0.00},
     ]
   },
   abb: {
@@ -618,7 +618,7 @@ function calcPID(method, kp, tau, theta, lam) {
 function toDCS(dcs, Kc, Ti, Td) {
   switch(dcs) {
     case 'honeywell':
-      return [Kc, +(Ti*60).toFixed(1), +(Td*60).toFixed(1)];    // GAIN=Kc, RSET=Ti×60(sec/rep), RATE=Td×60(sec)
+      return [Kc, Ti, Td];                                      // GAIN=Kc, RSET=Ti(min/rep), RATE=Td(min)
     case 'yokogawa':
       return [+(100/Kc).toFixed(2), +(Ti*60).toFixed(1), +(Td*60).toFixed(1)]; // P(%)=100/Kc, Ti(sec)=Ti×60, Td(sec)=Td×60
     case 'deltav':

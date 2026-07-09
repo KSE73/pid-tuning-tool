@@ -471,8 +471,8 @@ const DCS_CFG = {
     pTitle:'P — Proportional Band', iTitle:'I — Integral Time', dTitle:'D — Derivative Time' },
   honeywell: { name:'Experion PKS',
     p:{lbl:'GAIN', unit:'',       conv: kc      => kc.toFixed(4) },
-    i:{lbl:'RSET', unit:'sec/rep',conv: (kc,ti) => (ti*60).toFixed(1) },
-    d:{lbl:'RATE', unit:'sec',    conv: (kc,ti,td) => (td*60).toFixed(1) },
+    i:{lbl:'RSET', unit:'min/rep',conv: (kc,ti) => ti.toFixed(4) },
+    d:{lbl:'RATE', unit:'min',    conv: (kc,ti,td) => td.toFixed(4) },
     pTitle:'P — Gain', iTitle:'I — Reset Rate (RSET)', dTitle:'D — Rate (RATE)' },
   deltav:    { name:'DeltaV',
     p:{lbl:'GAIN', unit:'',       conv: kc      => kc.toFixed(4) },
@@ -848,7 +848,7 @@ window.addEventListener('load', () => {
       if (dcs === 'yokogawa') {
         chipText = 'P='+(100/kc).toFixed(1)+'% · Ti='+(ti*60).toFixed(0)+'s · Td='+(td*60).toFixed(0)+'s';
       } else if (dcs === 'honeywell') {
-        chipText = 'GAIN='+kc.toFixed(3)+' · RSET='+(ti*60).toFixed(0)+'s · RATE='+(td*60).toFixed(0)+'s';
+        chipText = 'GAIN='+kc.toFixed(3)+' · RSET='+ti.toFixed(3)+'min · RATE='+td.toFixed(3)+'min';
       } else if (dcs === 'deltav') {
         chipText = 'GAIN='+kc.toFixed(3)+' · RESET='+(ti*60).toFixed(0)+'s · RATE='+(td*60).toFixed(0)+'s';
       } else {
