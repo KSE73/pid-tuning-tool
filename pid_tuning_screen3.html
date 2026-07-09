@@ -506,7 +506,7 @@ const DCS_DEFS = {
     params:[
       {key:'P', dcsName:'GAIN',  unit:'(무단위)',          prev:1.50},
       {key:'I', dcsName:'RESET', unit:'sec/repeat',        prev:192},
-      {key:'D', dcsName:'RATE',  unit:'min',               prev:0.00},
+      {key:'D', dcsName:'RATE',  unit:'sec',               prev:0.00},
     ]
   },
   abb: {
@@ -611,6 +611,13 @@ function renderDCSParams() {
 // ══════════════════════════════════════════
 function renderBasisSteps(Kc, Ti, Td) {
   const m=MODEL; const lam=LAMBDA;
+  // DCS 변환값 동적 생성 (선택된 DCS 기준)
+  const _def = DCS_DEFS[DCS] || DCS_DEFS.yokogawa;
+  const _vals = toDCS(DCS, Kc, Ti, Td);
+  const _dcsLine = _def.params.map((p,i)=>{
+    let u = p.unit.replace(/\(.*?\)/g,'').replace('=100/Kc','').trim();
+    return `${p.dcsName} = <span class="result">${+(+_vals[i]).toFixed(3)}${u?(' '+u):''}</span>`;
+  }).join(' &nbsp;|&nbsp; ');
   document.getElementById('b-kp').textContent=m.kp;
   document.getElementById('b-tau').textContent=m.tau;
   document.getElementById('b-theta').textContent=m.theta;
@@ -620,16 +627,18 @@ function renderBasisSteps(Kc, Ti, Td) {
     {n:1, text:`IMC 이론에서 비례이득 Kc 계산:<br><span class="math">Kc = (τ + θ/2) / (Kp × (λ + θ/2))</span><br>= (${m.tau} + ${(m.theta/2).toFixed(3)}) / (${m.kp} × (${lam} + ${(m.theta/2).toFixed(3)}))<br>= <span class="result">${Kc}</span>`},
     {n:2, text:`적분시간 Ti 계산:<br><span class="math">Ti = τ + θ/2</span><br>= ${m.tau} + ${(m.theta/2).toFixed(3)} = <span class="result">${Ti} min</span>`},
     {n:3, text:`미분시간 Td 계산:<br><span class="math">Td = (τ × θ/2) / (τ + θ/2)</span><br>= (${m.tau} × ${(m.theta/2).toFixed(3)}) / ${Ti} = <span class="result">${Td} min</span>`},
-    {n:4, text:`DCS 변환 — ${DCS_DEFS[DCS].name}:<br>GAIN = Kc = <span class="result">${Kc}</span> | RSET = <span class="result">${Ti} min/rep</span> | RATE = Td = <span class="result">${Td} min</span>`},
+    {n:4, text:`DCS 변환 — ${_def.name}:<br>${_dcsLine}`},
     {n:5, text:`λ = ${lam} min ≈ ${(lam/m.theta).toFixed(1)}× Dead Time. 권장 범위(2~5×θ)를 약간 초과하여 <strong>안정성 우선</strong> 설정입니다. 응답 속도를 높이려면 λ를 줄이세요.`}
   ] : METHOD==='zn' ? [
     {n:1, text:`Ziegler-Nichols Step Response 방법:<br><span class="math">Kc = 1.2 × τ / (Kp × θ)</span><br>= 1.2 × ${m.tau} / (${m.kp} × ${m.theta}) = <span class="result">${Kc}</span>`},
     {n:2, text:`적분시간: <span class="math">Ti = 2 × θ</span> = 2 × ${m.theta} = <span class="result">${Ti} min</span>`},
     {n:3, text:`미분시간: <span class="math">Td = 0.5 × θ</span> = 0.5 × ${m.theta} = <span class="result">${Td} min</span>`},
-    {n:4, text:`⚠ Z-N 방법은 빠른 응답을 제공하나 Overshoot 25% 이상 발생 가능. 공정 특성에 따라 Kc를 20~30% 줄이는 것을 권장합니다.`}
+    {n:4, text:`DCS 변환 — ${_def.name}:<br>${_dcsLine}`},
+    {n:5, text:`⚠ Z-N 방법은 빠른 응답을 제공하나 Overshoot 25% 이상 발생 가능. 공정 특성에 따라 Kc를 20~30% 줄이는 것을 권장합니다.`}
   ] : [
     {n:1, text:`선택된 Tuning Method: <strong>${METHOD}</strong>`},
-    {n:2, text:`Kc = <span class="result">${Kc}</span>, Ti = <span class="result">${Ti} min</span>, Td = <span class="result">${Td} min</span>`}
+    {n:2, text:`Kc = <span class="result">${Kc}</span>, Ti = <span class="result">${Ti} min</span>, Td = <span class="result">${Td} min</span>`},
+    {n:3, text:`DCS 변환 — ${_def.name}:<br>${_dcsLine}`}
   ];
 
   document.getElementById('basis-steps').innerHTML = steps.map(s=>`

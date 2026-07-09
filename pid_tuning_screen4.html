@@ -798,6 +798,8 @@ window.addEventListener('load', () => {
         chipText = 'GAIN='+kc.toFixed(3)+' · RSET='+ti.toFixed(3)+'min · RATE='+td.toFixed(3)+'min';
       } else if (dcs === 'deltav') {
         chipText = 'GAIN='+kc.toFixed(3)+' · RESET='+(ti*60).toFixed(0)+'s · RATE='+(td*60).toFixed(0)+'s';
+      } else if (dcs === 'abb') {
+        chipText = 'KP='+kc.toFixed(3)+' · TI='+(ti*60).toFixed(0)+'s · TD='+(td*60).toFixed(0)+'s';
       } else {
         chipText = 'Kc='+kc.toFixed(3)+' · Ti='+(ti*60).toFixed(0)+'s · Td='+(td*60).toFixed(0)+'s';
       }
