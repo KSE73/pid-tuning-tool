@@ -24,23 +24,10 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
 .g-avatar{width:30px;height:30px;background:#444;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#ccc;font-size:11px;font-weight:600;border:1.5px solid #555;cursor:pointer}
 
 .layout{display:flex;padding-top:48px;min-height:100vh}
-.sidebar{width:168px;min-width:168px;background:#fff;border-right:1px solid #E8E8E8;position:fixed;top:48px;left:0;bottom:0;overflow-y:auto;z-index:100;padding:8px 0 60px}
-.sb-section{margin-bottom:2px}
-.sb-section-header{display:flex;align-items:center;justify-content:space-between;padding:7px 14px 5px;cursor:pointer}
-.sb-section-label{font-size:12px;font-weight:700;color:#1A1A1A;display:flex;align-items:center;gap:6px}
 .dot{width:8px;height:8px;border-radius:50%}
 .dot-orange{background:#FF6B2B}.dot-blue{background:#3B82F6}.dot-green{background:#10B981}.dot-purple{background:#8B5CF6}
-.sb-items{padding-bottom:4px}
-.sb-item{display:flex;align-items:center;justify-content:space-between;padding:6px 14px 6px 26px;color:#555;font-size:12px;cursor:pointer;text-decoration:none;position:relative;transition:background .1s}
-.sb-item:hover{background:#F5F6F8;color:#1A1A1A}
-.sb-item.active{background:#FFF0E8;color:#FF6B2B;font-weight:600}
-.sb-item.active::before{content:'';position:absolute;left:0;top:4px;bottom:4px;width:3px;background:#FF6B2B;border-radius:0 3px 3px 0}
-.sb-count{font-size:11px;color:#999;background:#F0F0F0;padding:1px 6px;border-radius:10px;font-weight:500}
-.sb-divider{height:1px;background:#F0F0F0;margin:6px 14px}
-.sb-bottom{position:absolute;bottom:0;left:0;right:0;border-top:1px solid #F0F0F0;background:#fff;padding:8px 0}
-.sb-bottom-item{display:flex;align-items:center;gap:8px;padding:7px 14px;color:#666;font-size:12px;cursor:pointer}
 
-.main{margin-left:168px;flex:1;min-width:0;padding:20px 24px 80px}
+.main{flex:1;min-width:0;padding:20px 24px 80px}
 
 .step-bar{display:flex;align-items:center;background:#fff;border:1px solid #E8E8E8;border-radius:8px;padding:10px 18px;margin-bottom:14px;overflow-x:auto;gap:0}
 .step-item{display:flex;align-items:center;gap:7px;flex-shrink:0}
@@ -222,45 +209,6 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
 </header>
 
 <div class="layout">
-<aside class="sidebar">
-  <div class="sb-section">
-    <div class="sb-section-header"><div class="sb-section-label"><span class="dot dot-orange"></span>작업함</div></div>
-    <div class="sb-items">
-      <a class="sb-item active">현재 작업</a>
-      <a class="sb-item">진행중 <span class="sb-count">2</span></a>
-      <a class="sb-item">임시저장 <span class="sb-count">5</span></a>
-    </div>
-  </div>
-  <div class="sb-divider"></div>
-  <div class="sb-section">
-    <div class="sb-section-header"><div class="sb-section-label"><span class="dot dot-blue"></span>Tuning 이력</div></div>
-    <div class="sb-items">
-      <a class="sb-item">완료 <span class="sb-count">24</span></a>
-      <a class="sb-item">검토대기 <span class="sb-count">3</span></a>
-    </div>
-  </div>
-  <div class="sb-divider"></div>
-  <div class="sb-section">
-    <div class="sb-section-header"><div class="sb-section-label"><span class="dot dot-green"></span>Loop 목록</div></div>
-    <div class="sb-items">
-      <a class="sb-item">Temperature <span class="sb-count">12</span></a>
-      <a class="sb-item">Pressure <span class="sb-count">8</span></a>
-      <a class="sb-item">Flow <span class="sb-count">15</span></a>
-    </div>
-  </div>
-  <div class="sb-divider"></div>
-  <div class="sb-section">
-    <div class="sb-section-header"><div class="sb-section-label"><span class="dot dot-purple"></span>진단함</div></div>
-    <div class="sb-items">
-      <a class="sb-item active">Plant Triage <span class="sb-count">41</span></a>
-      <a class="sb-item">불량 Loop <span class="sb-count" style="background:#FEE2E2;color:#DC2626">7</span></a>
-    </div>
-  </div>
-  <div class="sb-bottom">
-    <div class="sb-bottom-item">⭐ 즐겨찾기</div>
-    <div class="sb-bottom-item">⚙ 설정</div>
-  </div>
-</aside>
 
 <main class="main">
 
