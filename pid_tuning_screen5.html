@@ -255,25 +255,25 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
 
   <!-- Summary stat cards -->
   <div class="summary-grid animate-in">
-    <div class="sum-card orange">
+    <div class="sum-card orange" id="sc-auto">
       <div class="sum-label">AUTO 모드 비율</div>
-      <div class="sum-val">82<span style="font-size:14px">%</span></div>
+      <div class="sum-val" id="sc-auto-val">—<span style="font-size:14px">%</span></div>
       <div class="sum-sub">권장 ≥ 80% · 충족</div>
     </div>
-    <div class="sum-card red">
+    <div class="sum-card red" id="sc-ov">
       <div class="sum-label">최대 Overshoot</div>
-      <div class="sum-val">18<span style="font-size:14px">%</span></div>
+      <div class="sum-val" id="sc-ov-val">—<span style="font-size:14px">%</span></div>
       <div class="sum-sub">기준 ≤ 20% · 경계</div>
     </div>
-    <div class="sum-card green">
+    <div class="sum-card green" id="sc-sat">
       <div class="sum-label">Valve 포화 빈도</div>
-      <div class="sum-val">1.2<span style="font-size:14px">%</span></div>
+      <div class="sum-val" id="sc-sat-val">—<span style="font-size:14px">%</span></div>
       <div class="sum-sub">기준 ≤ 5% · 양호</div>
     </div>
-    <div class="sum-card blue">
+    <div class="sum-card blue" id="sc-pass">
       <div class="sum-label">진단 항목 통과</div>
-      <div class="sum-val">5<span style="font-size:14px">/7</span></div>
-      <div class="sum-sub">2개 항목 주의 필요</div>
+      <div class="sum-val" id="sc-pass-val">—<span style="font-size:14px">/7</span></div>
+      <div class="sum-sub" id="sc-pass-sub">—</div>
     </div>
   </div>
 
@@ -291,10 +291,7 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
         <div class="grade-score-track"><div class="grade-score-fill" id="grade-fill" style="width:62%"></div></div>
         <span class="grade-score-val" id="grade-score">62</span>
       </div>
-      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
-        <span style="font-size:10px;font-weight:600;padding:2px 8px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;color:#D97706">🟡 Oscillation 의심</span>
-        <span style="font-size:10px;font-weight:600;padding:2px 8px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;color:#D97706">🟡 Overshoot 경계</span>
-      </div>
+      <div id="grade-chips" style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center"></div>
     </div>
 
     <!-- Radar chart -->
@@ -671,9 +668,64 @@ function renderActions(D) {
     </div>`).join('');
 }
 
-function animateGrade(pct){
-  const fill=document.getElementById('grade-fill');
-  setTimeout(()=>{fill.style.width=pct+'%';},300);
+function updateGradeCard(D) {
+  const g = D.grade;
+  const pct = D.gradePct;
+  const passCount = 7 - D.warnCount - D.errCount;
+
+  // 등급 카드 class 교체
+  const card = document.getElementById('grade-card');
+  card.className = 'grade-card grade-' + g;
+
+  // 글자 업데이트
+  document.getElementById('grade-bg').textContent     = g;
+  document.getElementById('grade-circle').textContent = g;
+
+  const labelMap = {A:'Excellent', B:'Good', C:'Tune Required', D:'Action Needed'};
+  const subMap   = {
+    A:'루프 성능이 우수합니다. 현재 파라미터를 유지하세요.',
+    B:'루프 성능이 양호합니다. 소폭 개선 여지가 있습니다.',
+    C:'Tuning 파라미터 개선이 필요합니다.<br>추천 PID 파라미터 적용 후 재진단을 권장합니다.',
+    D:'즉각적인 조치가 필요합니다. 추천 PID를 적용하세요.'
+  };
+  document.getElementById('grade-label').textContent  = labelMap[g] || 'Tune Required';
+  document.getElementById('grade-sub').innerHTML      = subMap[g] || '';
+
+  // 종합 점수
+  setTimeout(()=>{ document.getElementById('grade-fill').style.width = pct+'%'; }, 300);
+  document.getElementById('grade-score').textContent = pct;
+
+  // sum-cards
+  document.getElementById('sc-auto-val').innerHTML   = D.autoRate+'<span style="font-size:14px">%</span>';
+  document.getElementById('sc-ov-val').innerHTML     = (+D.overshoot).toFixed(1)+'<span style="font-size:14px">%</span>';
+  document.getElementById('sc-sat-val').innerHTML    = D.satRate+'<span style="font-size:14px">%</span>';
+  document.getElementById('sc-pass-val').innerHTML   = passCount+'<span style="font-size:14px">/7</span>';
+  document.getElementById('sc-pass-sub').textContent = (D.warnCount+D.errCount) + '개 항목 주의 필요';
+
+  // Overshoot 카드 색상
+  const ovCard = document.getElementById('sc-ov');
+  ovCard.className = 'sum-card ' + (D.overshoot<=10?'green':D.overshoot<=20?'orange':'red');
+
+  // AUTO 카드 색상
+  const autoCard = document.getElementById('sc-auto');
+  autoCard.className = 'sum-card ' + (D.autoRate>=80?'green':D.autoRate>=60?'orange':'red');
+
+  // 경고 칩
+  const chipEl = document.getElementById('grade-chips');
+  const chipStyle = (status) => status==='err'
+    ? 'font-size:10px;font-weight:600;padding:2px 8px;background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;color:#DC2626'
+    : 'font-size:10px;font-weight:600;padding:2px 8px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;color:#D97706';
+  const items = [
+    {status:D.oscStatus,     label:'Oscillation'},
+    {status:D.ovStatus,      label:'Overshoot'},
+    {status:D.stictionStatus,label:'Stiction'},
+    {status:D.iaeStatus,     label:'IAE'},
+    {status:D.autoStatus,    label:'AUTO 모드'},
+  ].filter(c=>c.status!=='ok');
+
+  chipEl.innerHTML = items.length === 0
+    ? '<span style="font-size:10px;color:#059669;font-weight:600">✅ 모든 항목 정상</span>'
+    : items.map(c=>`<span style="${chipStyle(c.status)}">${c.status==='err'?'🔴':'🟡'} ${c.label}</span>`).join('');
 }
 
 function exportPDF(){
@@ -743,7 +795,7 @@ window.addEventListener('load', () => {
   buildRadar(D);
   renderDiagItems(DIAG_ITEMS);
   renderActions(D);
-  animateGrade(D.gradePct);
+  updateGradeCard(D);
 });
 
 let _tt;
