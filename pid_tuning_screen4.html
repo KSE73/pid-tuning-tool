@@ -241,16 +241,16 @@ input[type=range].slider{width:100%;accent-color:#FF6B2B;height:4px;cursor:point
   <!-- Loop info bar -->
   <div class="loop-bar">
     <span class="lbl">Loop</span>
-    <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600">TIC-101</span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600" id="s4-loop-tag">—</span>
     <div style="width:1px;height:20px;background:#E8E8E8"></div>
     <span class="lbl">모델</span>
-    <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#555">Kp=0.824 · τ=3.21 · θ=1.05</span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#555" id="s4-model-chip">Kp=— · τ=— · θ=—</span>
     <div style="width:1px;height:20px;background:#E8E8E8"></div>
-    <span class="lbl">추천 (IMC · Honeywell)</span>
-    <span class="pv-chip chip-pid-new" id="rec-chip">GAIN=1.823 · RSET=3.74 · RATE=0.45</span>
+    <span class="lbl" id="s4-method-label">추천</span>
+    <span class="pv-chip chip-pid-new" id="rec-chip">—</span>
     <div style="width:1px;height:20px;background:#E8E8E8"></div>
     <span class="lbl">현재</span>
-    <span class="pv-chip chip-pid-cur" id="cur-chip">GAIN=1.50 · RSET=3.20 · RATE=0.00</span>
+    <span class="pv-chip chip-pid-cur" id="cur-chip">—</span>
   </div>
 
   <div class="main-grid">
@@ -371,11 +371,11 @@ input[type=range].slider{width:100%;accent-color:#FF6B2B;height:4px;cursor:point
               <div class="slider-top">
                 <span class="slider-name">GAIN</span>
                 <div class="slider-vals">
-                  <span class="slider-val-new" id="sl-p-val">1.823</span>
-                  <span class="slider-val-rec" id="sl-p-rec">(추천: 1.823)</span>
+                  <span class="slider-val-new" id="sl-p-val">—</span>
+                  <span class="slider-val-rec" id="sl-p-rec"></span>
                 </div>
               </div>
-              <input type="range" class="slider" id="sl-p" min="0.1" max="5" step="0.001" value="1.823" oninput="onSlider('p',this.value)">
+              <input type="range" class="slider" id="sl-p" min="0.1" max="5" step="0.001" value="1" oninput="onSlider('p',this.value)">
               <div class="slider-limits"><span>0.1</span><span>5.0</span></div>
             </div>
           </div>
@@ -389,11 +389,11 @@ input[type=range].slider{width:100%;accent-color:#FF6B2B;height:4px;cursor:point
               <div class="slider-top">
                 <span class="slider-name">RSET</span>
                 <div class="slider-vals">
-                  <span class="slider-val-new" id="sl-i-val">3.735</span>
-                  <span class="slider-val-rec" id="sl-i-rec">(추천: 3.735)</span>
+                  <span class="slider-val-new" id="sl-i-val">—</span>
+                  <span class="slider-val-rec" id="sl-i-rec"></span>
                 </div>
               </div>
-              <input type="range" class="slider" id="sl-i" min="0.1" max="20" step="0.01" value="3.735" oninput="onSlider('i',this.value)">
+              <input type="range" class="slider" id="sl-i" min="0.1" max="20" step="0.01" value="1" oninput="onSlider('i',this.value)">
               <div class="slider-limits"><span>0.1</span><span>20</span></div>
             </div>
           </div>
@@ -407,11 +407,11 @@ input[type=range].slider{width:100%;accent-color:#FF6B2B;height:4px;cursor:point
               <div class="slider-top">
                 <span class="slider-name">RATE</span>
                 <div class="slider-vals">
-                  <span class="slider-val-new" id="sl-d-val">0.447</span>
-                  <span class="slider-val-rec" id="sl-d-rec">(추천: 0.447)</span>
+                  <span class="slider-val-new" id="sl-d-val">—</span>
+                  <span class="slider-val-rec" id="sl-d-rec"></span>
                 </div>
               </div>
-              <input type="range" class="slider" id="sl-d" min="0" max="5" step="0.001" value="0.447" oninput="onSlider('d',this.value)">
+              <input type="range" class="slider" id="sl-d" min="0" max="5" step="0.001" value="0" oninput="onSlider('d',this.value)">
               <div class="slider-limits"><span>0</span><span>5</span></div>
             </div>
           </div>
@@ -737,14 +737,50 @@ window.addEventListener('load', () => {
       if (iLbl) iLbl.textContent = lbl.i;
       if (dLbl) dLbl.textContent = lbl.d;
     }
-    // Source tag
+    // Source tag + loop bar 업데이트
+    const methodNames = {imc:'IMC',lambda:'Lambda/Dahlin',zn:'Ziegler-Nichols',itae:'ITAE',cc:'Cohen-Coon',manual:'수동입력'};
+    const methodLabel = methodNames[payload.method] || (payload.method||'IMC').toUpperCase();
+    const dcsLabelMap = {honeywell:'Honeywell',yokogawa:'CENTUM VP',deltav:'DeltaV',abb:'ABB 800xA'};
+    const dcsLabel = dcsLabelMap[payload.dcs || localStorage.getItem('pid_dcs')] || '';
+
+    // 태그명
+    const fname = payload.filename || '';
+    const tagName = fname.replace(/\.xlsx$/i,'').split(/[_\s]/)[0] || fname || '—';
+    const tagEl = document.getElementById('s4-loop-tag');
+    if (tagEl) tagEl.textContent = tagName;
+
+    // 모델 chip
     if (payload.model) {
       const m = payload.model;
-      const methodNames = {imc:'IMC',lambda:'Lambda/Dahlin',zn:'Ziegler-Nichols',itae:'ITAE',cc:'Cohen-Coon',manual:'수동입력'};
-      const methodLabel = methodNames[payload.method] || (payload.method||'').toUpperCase() || 'IMC';
+      const mchip = document.getElementById('s4-model-chip');
+      if (mchip) mchip.textContent =
+        'Kp='+((+m.kp).toFixed(3))+' · τ='+((+m.tau).toFixed(2))+' · θ='+((+m.theta).toFixed(2));
       document.getElementById('ab-summary').textContent =
         'FOPDT: Kp=' + (+m.kp).toFixed(3) + ', τ=' + (+m.tau).toFixed(2) +
         ' min, θ=' + (+m.theta).toFixed(2) + ' min  |  Tuning: ' + methodLabel;
+    }
+
+    // 추천 method 라벨
+    const mlabel = document.getElementById('s4-method-label');
+    if (mlabel) mlabel.textContent = '추천 (' + methodLabel + (dcsLabel?' · '+dcsLabel:'') + ')';
+
+    // rec chip
+    if (payload.rec) {
+      const {kc,ti,td} = payload.rec;
+      // DCS별 표시 변환
+      const dcs = payload.dcs || localStorage.getItem('pid_dcs') || 'yokogawa';
+      let chipText = '';
+      if (dcs === 'yokogawa') {
+        chipText = 'PB='+(100/kc).toFixed(1)+' · TI='+(ti*60).toFixed(0)+'s · TD='+(td*60).toFixed(0)+'s';
+      } else if (dcs === 'honeywell') {
+        chipText = 'GAIN='+kc.toFixed(3)+' · RSET='+(1/ti).toFixed(4)+' · RATE='+td.toFixed(3);
+      } else if (dcs === 'deltav') {
+        chipText = 'GAIN='+kc.toFixed(3)+' · RESET='+(ti*60).toFixed(0)+'s · RATE='+(td*60).toFixed(0)+'s';
+      } else {
+        chipText = 'Kc='+kc.toFixed(3)+' · Ti='+(ti*60).toFixed(0)+'s · Td='+(td*60).toFixed(0)+'s';
+      }
+      const rchip = document.getElementById('rec-chip');
+      if (rchip) rchip.textContent = chipText;
     }
   } catch(e) { console.warn('Screen4 load error:', e); }
 
