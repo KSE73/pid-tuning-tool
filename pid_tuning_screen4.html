@@ -348,6 +348,15 @@ input[type=range].slider{width:100%;accent-color:#FF6B2B;height:4px;cursor:point
               <div id="iae-cur-val" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#7C3AED;min-width:50px;text-align:right"></div>
             </div>
           </div>
+          <!-- DCS 파라미터 표시 -->
+          <div id="dcs-params-box" style="margin-top:10px;padding:10px 12px;background:#F8F9FB;border-radius:6px;border:1px solid #ECECEC;font-size:11px">
+            <div style="font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px" id="dcs-params-title">DCS 파라미터 (—)</div>
+            <div style="display:flex;gap:16px;flex-wrap:wrap">
+              <div><span style="color:#aaa">P: </span><span style="font-family:'JetBrains Mono',monospace;font-weight:600;color:#FF6B2B" id="dp-p">—</span><span style="color:#aaa;margin-left:3px" id="dp-p-unit"></span></div>
+              <div><span style="color:#aaa">I: </span><span style="font-family:'JetBrains Mono',monospace;font-weight:600;color:#FF6B2B" id="dp-i">—</span><span style="color:#aaa;margin-left:3px" id="dp-i-unit"></span></div>
+              <div><span style="color:#aaa">D: </span><span style="font-family:'JetBrains Mono',monospace;font-weight:600;color:#FF6B2B" id="dp-d">—</span><span style="color:#aaa;margin-left:3px" id="dp-d-unit"></span></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -364,12 +373,12 @@ input[type=range].slider{width:100%;accent-color:#FF6B2B;height:4px;cursor:point
         <div class="card-body">
           <div class="slider-section">
             <div class="slider-section-title">
-              <span>P — Proportional (GAIN)</span>
-              <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#aaa" id="p-dcs-label">Honeywell: GAIN</span>
+              <span id="p-section-title">P — Proportional</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#aaa" id="p-dcs-label">—</span>
             </div>
             <div class="slider-row">
               <div class="slider-top">
-                <span class="slider-name">GAIN</span>
+                <span class="slider-name" id="sl-p-name">P</span>
                 <div class="slider-vals">
                   <span class="slider-val-new" id="sl-p-val">—</span>
                   <span class="slider-val-rec" id="sl-p-rec"></span>
@@ -382,12 +391,12 @@ input[type=range].slider{width:100%;accent-color:#FF6B2B;height:4px;cursor:point
 
           <div class="slider-section">
             <div class="slider-section-title">
-              <span>I — Integral (RSET)</span>
-              <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#aaa" id="i-dcs-label">Honeywell: RSET (min/rep)</span>
+              <span id="i-section-title">I — Integral</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#aaa" id="i-dcs-label">—</span>
             </div>
             <div class="slider-row">
               <div class="slider-top">
-                <span class="slider-name">RSET</span>
+                <span class="slider-name" id="sl-i-name">I</span>
                 <div class="slider-vals">
                   <span class="slider-val-new" id="sl-i-val">—</span>
                   <span class="slider-val-rec" id="sl-i-rec"></span>
@@ -400,12 +409,12 @@ input[type=range].slider{width:100%;accent-color:#FF6B2B;height:4px;cursor:point
 
           <div class="slider-section">
             <div class="slider-section-title">
-              <span>D — Derivative (RATE)</span>
-              <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#aaa" id="d-dcs-label">Honeywell: RATE (min)</span>
+              <span id="d-section-title">D — Derivative</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#aaa" id="d-dcs-label">—</span>
             </div>
             <div class="slider-row">
               <div class="slider-top">
-                <span class="slider-name">RATE</span>
+                <span class="slider-name" id="sl-d-name">D</span>
                 <div class="slider-vals">
                   <span class="slider-val-new" id="sl-d-val">—</span>
                   <span class="slider-val-rec" id="sl-d-rec"></span>
@@ -451,6 +460,58 @@ input[type=range].slider{width:100%;accent-color:#FF6B2B;height:4px;cursor:point
 // PROCESS & PID PARAMETERS
 // ══════════════════════════════════════════
 let PROC = { kp:0.824, tau:3.21, theta:1.05 };
+let DCS_SEL = localStorage.getItem('pid_dcs') || 'yokogawa';
+
+// DCS 파라미터 정의 (표시명, 단위, 변환)
+const DCS_CFG = {
+  yokogawa:  { name:'CENTUM VP',
+    p:{lbl:'PB',   unit:'%',      conv: kc      => (100/kc).toFixed(2) },
+    i:{lbl:'TI',   unit:'sec',    conv: (kc,ti) => (ti*60).toFixed(1)  },
+    d:{lbl:'TD',   unit:'sec',    conv: (kc,ti,td) => (td*60).toFixed(1) },
+    pTitle:'P — Proportional Band', iTitle:'I — Integral Time', dTitle:'D — Derivative Time' },
+  honeywell: { name:'Experion PKS',
+    p:{lbl:'GAIN', unit:'',       conv: kc      => kc.toFixed(4) },
+    i:{lbl:'RSET', unit:'rep/min',conv: (kc,ti) => (1/ti).toFixed(4) },
+    d:{lbl:'RATE', unit:'min',    conv: (kc,ti,td) => td.toFixed(4) },
+    pTitle:'P — Gain', iTitle:'I — Reset Rate (RSET)', dTitle:'D — Rate (RATE)' },
+  deltav:    { name:'DeltaV',
+    p:{lbl:'GAIN', unit:'',       conv: kc      => kc.toFixed(4) },
+    i:{lbl:'RESET',unit:'sec/rep',conv: (kc,ti) => (ti*60).toFixed(1) },
+    d:{lbl:'RATE', unit:'sec',    conv: (kc,ti,td) => (td*60).toFixed(1) },
+    pTitle:'P — Gain', iTitle:'I — Reset', dTitle:'D — Rate' },
+  abb:       { name:'ABB 800xA',
+    p:{lbl:'KP',   unit:'',       conv: kc      => kc.toFixed(4) },
+    i:{lbl:'TI',   unit:'sec',    conv: (kc,ti) => (ti*60).toFixed(1) },
+    d:{lbl:'TD',   unit:'sec',    conv: (kc,ti,td) => (td*60).toFixed(1) },
+    pTitle:'P — Gain (KP)', iTitle:'I — Integral Time (TI)', dTitle:'D — Derivative Time (TD)' },
+};
+
+function applyDCSLabels(dcs) {
+  const cfg = DCS_CFG[dcs] || DCS_CFG.yokogawa;
+  const set = (id, v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
+  set('p-section-title', cfg.pTitle);
+  set('i-section-title', cfg.iTitle);
+  set('d-section-title', cfg.dTitle);
+  set('p-dcs-label', cfg.name + ': ' + cfg.p.lbl + (cfg.p.unit?' ('+cfg.p.unit+')':''));
+  set('i-dcs-label', cfg.name + ': ' + cfg.i.lbl + (cfg.i.unit?' ('+cfg.i.unit+')':''));
+  set('d-dcs-label', cfg.name + ': ' + cfg.d.lbl + (cfg.d.unit?' ('+cfg.d.unit+')':''));
+  set('sl-p-name', cfg.p.lbl);
+  set('sl-i-name', cfg.i.lbl);
+  set('sl-d-name', cfg.d.lbl);
+  set('dcs-params-title', 'DCS 파라미터 (' + cfg.name + ')');
+}
+
+function updateDCSParamBox(Kc, Ti, Td) {
+  const dcs = DCS_SEL;
+  const cfg = DCS_CFG[dcs] || DCS_CFG.yokogawa;
+  const set = (id, v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
+  set('dp-p', cfg.p.conv(Kc, Ti, Td));
+  set('dp-i', cfg.i.conv(Kc, Ti, Td));
+  set('dp-d', cfg.d.conv(Kc, Ti, Td));
+  set('dp-p-unit', cfg.p.unit);
+  set('dp-i-unit', cfg.i.unit);
+  set('dp-d-unit', cfg.d.unit);
+}
 
 let REC  = { p:1.823, i:3.735, d:0.447 };   // p=Kc, i=Ti(min), d=Td(min)
 let CUR  = { p:1.500, i:3.200, d:0.000 };   // current DCS
@@ -627,8 +688,13 @@ function _redraw() {
   renderKPIs(mNew,mCur);
 
   // ab summary
-  document.getElementById('ab-summary').textContent=
-    `추천 PID — IAE: ${mNew.iae}  Overshoot: ${mNew.overshoot}%  Settling: ${mNew.settleTime} min`;
+  const methodNm = {imc:'IMC',lambda:'Lambda',zn:'ZN',itae:'ITAE',cc:'Cohen-Coon',manual:'Manual'};
+  const _payload2 = JSON.parse(sessionStorage.getItem('pidData')||'{}');
+  const mLabel = methodNm[_payload2.method] || 'IMC';
+  const dcsNm = (DCS_CFG[DCS_SEL]||{}).name || DCS_SEL;
+  document.getElementById('ab-summary').textContent =
+    `[${mLabel} · ${dcsNm}]  IAE: ${mNew.iae}  Overshoot: ${mNew.overshoot}%  Settling: ${mNew.settleTime} min`;
+  updateDCSParamBox(TUNED.p, TUNED.i, TUNED.d);
 }
 
 // ══════════════════════════════════════════
@@ -722,21 +788,9 @@ window.addEventListener('load', () => {
         if (recEl) recEl.textContent = '(추천: '+(+v).toFixed(3)+')';
       });
     }
-    // DCS label update
-    if (payload.dcs) {
-      const dcsLabels = {
-        honeywell: { i:'Honeywell: RSET (rep/min)', d:'Honeywell: RATE (min)' },
-        yokogawa:  { i:'CENTUM VP: TI (sec)',        d:'CENTUM VP: TD (sec)' },
-        deltav:    { i:'DeltaV: RESET (sec/rep)',     d:'DeltaV: RATE (sec)' },
-        abb:       { i:'ABB 800xA: TI (sec)',         d:'ABB 800xA: TD (sec)' },
-      };
-      const savedDcs = payload.dcs || localStorage.getItem('pid_dcs') || 'yokogawa';
-      const lbl = dcsLabels[savedDcs] || dcsLabels.honeywell;
-      const iLbl = document.getElementById('i-dcs-label');
-      const dLbl = document.getElementById('d-dcs-label');
-      if (iLbl) iLbl.textContent = lbl.i;
-      if (dLbl) dLbl.textContent = lbl.d;
-    }
+    // DCS 설정 적용
+    DCS_SEL = payload.dcs || localStorage.getItem('pid_dcs') || 'yokogawa';
+    applyDCSLabels(DCS_SEL);
     // Source tag + loop bar 업데이트
     const methodNames = {imc:'IMC',lambda:'Lambda/Dahlin',zn:'Ziegler-Nichols',itae:'ITAE',cc:'Cohen-Coon',manual:'수동입력'};
     const methodLabel = methodNames[payload.method] || (payload.method||'IMC').toUpperCase();
