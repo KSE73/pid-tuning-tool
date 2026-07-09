@@ -271,7 +271,7 @@ html,body{height:100%;font-family:'Pretendard',-apple-system,sans-serif;backgrou
   <!-- Loop info bar -->
   <div class="loop-bar">
     <span class="loop-bar-label">Loop</span>
-    <input class="loop-input" id="loop-name" value="TIC-101" placeholder="Loop Tag Name">
+    <input class="loop-input" id="loop-name" value="" placeholder="Loop Tag Name">
     <div class="loop-sep"></div>
     <span class="loop-bar-label">DCS</span>
     <select class="dcs-select" id="dcs-type">
@@ -888,6 +888,7 @@ function goNext(){
     prev.selStart = s;
     prev.selEnd   = e;
     prev.dcs = document.getElementById('dcs-type').value;
+    prev.loopName = (document.getElementById('loop-name').value || '').trim() || prev.loopName || '';
     localStorage.setItem('pid_dcs', prev.dcs);
     sessionStorage.setItem('pidData', JSON.stringify(prev));
   } catch(err) { console.warn('segment save fail:', err); }
@@ -919,9 +920,16 @@ window.addEventListener('load',()=>{
         const el = document.getElementById('data-range-info');
         if (el) el.textContent = n.toLocaleString() + ' points · ' + durMin;
       }
-      if (payload.filename) {
+      if (payload.loopName || payload.filename) {
         const loopEl = document.getElementById('loop-name');
-        if (loopEl) loopEl.value = payload.filename.replace(/\.[^.]+$/, '').substring(0, 24);
+        if (loopEl) {
+          if (payload.loopName) {
+            loopEl.value = payload.loopName;
+          } else {
+            const raw = payload.filename.replace(/\.[^.]+$/, '');
+            loopEl.value = raw.split(/[_\s]+/)[0] || raw;
+          }
+        }
       }
     }
   } catch(e) { console.warn('sessionStorage load fail:', e); }

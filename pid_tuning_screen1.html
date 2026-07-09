@@ -1136,9 +1136,12 @@ function saveAndGo(){
       };
     }).filter(r => r.ts && r.pv !== null && !isNaN(r.pv));
 
+    const rawName = (S.file || '').replace(/\.[^.]+$/, '');
+    const loopName = rawName.split(/[_\s]+/)[0] || rawName || '';
     const payload = {
       data,
       filename: S.file || '',
+      loopName: loopName,
       mapping: S.mapping
     };
     sessionStorage.setItem('pidData', JSON.stringify(payload));

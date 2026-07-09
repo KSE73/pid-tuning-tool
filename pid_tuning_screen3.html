@@ -937,8 +937,9 @@ window.addEventListener('load',()=>{
     renderDCSParams();
 
     // 태그명 + ab-info 업데이트
-    const fname = payload.filename || '';
-    const tagName = fname.replace(/\.xlsx$/i,'').split(/[_\s]/)[0] || fname || '—';
+    const tagName = payload.loopName ||
+      (payload.filename||'').replace(/\.xlsx$/i,'').split(/[_\s]+/)[0] ||
+      payload.filename || '—';
     const tagEl = document.getElementById('s3-loop-tag');
     if (tagEl) tagEl.textContent = tagName;
     const dcsName = DCS_DEFS[DCS] ? DCS_DEFS[DCS].name : DCS;
