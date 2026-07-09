@@ -508,43 +508,87 @@ function updateNavBrush(){
   brush.style.width=(right-left)+'%';
 }
 
-(function setupNav(){
+function setupNav(){
   const wrap=document.getElementById('nav-wrap');
   const brush=document.getElementById('nav-brush');
   const lh=document.getElementById('nbh-left');
   const rh=document.getElementById('nbh-right');
   let dragging=null, startX=0, startL=0, startR=0, startW=0;
-  const total=DATA.length;
 
   function getIdx(px){
     const W=wrap.clientWidth;
+    const total=DATA.length;
     return Math.max(0,Math.min(total-1,Math.round((px/W)*total)));
   }
 
-  lh.addEventListener('mousedown',e=>{dragging='left';startX=e.clientX;startL=parseFloat(brush.style.left||'0')/100*wrap.clientWidth;e.stopPropagation();e.preventDefault();});
-  rh.addEventListener('mousedown',e=>{dragging='right';startX=e.clientX;startR=(parseFloat(brush.style.left||'0')+parseFloat(brush.style.width||'100'))/100*wrap.clientWidth;e.stopPropagation();e.preventDefault();});
-  brush.addEventListener('mousedown',e=>{if(e.target===lh||e.target===rh)return;dragging='move';startX=e.clientX;startL=parseFloat(brush.style.left||'0')/100*wrap.clientWidth;startW=parseFloat(brush.style.width||'100')/100*wrap.clientWidth;e.preventDefault();});
+  function getPx(pct){ return (parseFloat(pct||'0')/100)*wrap.clientWidth; }
 
-  document.addEventListener('mousemove',e=>{
+  // Mouse events
+  lh.addEventListener('mousedown',e=>{
+    dragging='left';startX=e.clientX;
+    startL=getPx(brush.style.left);
+    startW=getPx(brush.style.width);
+    e.stopPropagation();e.preventDefault();
+  });
+  rh.addEventListener('mousedown',e=>{
+    dragging='right';startX=e.clientX;
+    startL=getPx(brush.style.left);
+    startR=startL+getPx(brush.style.width);
+    e.stopPropagation();e.preventDefault();
+  });
+  brush.addEventListener('mousedown',e=>{
+    if(e.target===lh||e.target===rh)return;
+    dragging='move';startX=e.clientX;
+    startL=getPx(brush.style.left);
+    startW=getPx(brush.style.width);
+    e.preventDefault();
+  });
+
+  function onMove(clientX){
     if(!dragging)return;
     const W=wrap.clientWidth;
-    const dx=e.clientX-startX;
+    const total=DATA.length;
+    const dx=clientX-startX;
     if(dragging==='left'){
-      const newL=Math.max(0,Math.min(startL+dx,startL+startW-20));
+      const newL=Math.max(0,Math.min(startL+dx, startL+startW-20));
       viewStart=getIdx(newL);
     } else if(dragging==='right'){
-      const newR=Math.min(W,Math.max(startR+dx,startL+20));
+      const newR=Math.min(W,Math.max(startR+dx, startL+20));
       viewEnd=getIdx(newR);
     } else if(dragging==='move'){
-      const newL=Math.max(0,Math.min(startL+dx,W-startW));
+      const newL=Math.max(0,Math.min(startL+dx, W-startW));
       viewStart=getIdx(newL);
       viewEnd=Math.min(total-1,getIdx(newL+startW));
     }
-    if(viewStart>=viewEnd-5)viewEnd=Math.min(total-1,viewStart+5);
+    if(viewStart>=viewEnd-5)viewEnd=Math.min(DATA.length-1,viewStart+5);
     updateChartView();
-  });
+  }
+
+  document.addEventListener('mousemove',e=>{onMove(e.clientX);});
   document.addEventListener('mouseup',()=>{dragging=null;});
-})();
+
+  // Touch events (모바일/터치스크린 지원)
+  function touchStart(e, type){
+    const t=e.touches[0];
+    dragging=type; startX=t.clientX;
+    startL=getPx(brush.style.left);
+    startW=getPx(brush.style.width);
+    if(type==='right') startR=startL+startW;
+    e.preventDefault();
+  }
+  lh.addEventListener('touchstart',e=>{touchStart(e,'left');},{passive:false});
+  rh.addEventListener('touchstart',e=>{touchStart(e,'right');},{passive:false});
+  brush.addEventListener('touchstart',e=>{
+    if(e.target===lh||e.target===rh)return;
+    touchStart(e,'move');
+  },{passive:false});
+  document.addEventListener('touchmove',e=>{
+    if(!dragging)return;
+    onMove(e.touches[0].clientX);
+    e.preventDefault();
+  },{passive:false});
+  document.addEventListener('touchend',()=>{dragging=null;});
+}
 
 // ══════════════════════════════════════════
 // CHART INTERACTION — SELECT / CROSSHAIR
@@ -886,6 +930,7 @@ window.addEventListener('load',()=>{
     navChart.data.datasets[1].data = DATA.map(d => d.mv);
     navChart.update('none');
     updateChartView();
+    setupNav();
     setTimeout(autoDetectRegions, 400);
   }
 });
