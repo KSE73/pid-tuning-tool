@@ -501,6 +501,30 @@ function applyDCSLabels(dcs) {
   set('dcs-params-title', 'DCS 파라미터 (' + cfg.name + ')');
 }
 
+// DCS 단위로 슬라이더 표시값 변환
+function dcsDisplayVal(key, Kc, Ti, Td) {
+  const cfg = DCS_CFG[DCS_SEL] || DCS_CFG.yokogawa;
+  if (key === 'p') return cfg.p.conv(Kc, Ti, Td);
+  if (key === 'i') return cfg.i.conv(Kc, Ti, Td);
+  if (key === 'd') return cfg.d.conv(Kc, Ti, Td);
+  return '—';
+}
+
+// 슬라이더 표시값 갱신 (DCS 변환 적용)
+function refreshSliderDisplay() {
+  const Kc = TUNED.p, Ti = TUNED.i, Td = TUNED.d;
+  ['p','i','d'].forEach(k => {
+    const el = document.getElementById('sl-'+k+'-val');
+    if (el) el.textContent = dcsDisplayVal(k, Kc, Ti, Td);
+  });
+  // 추천값 표시도 갱신
+  const rKc = REC.p, rTi = REC.i, rTd = REC.d;
+  ['p','i','d'].forEach(k => {
+    const el = document.getElementById('sl-'+k+'-rec');
+    if (el && REC[k] != null) el.textContent = '(추천: ' + dcsDisplayVal(k, rKc, rTi, rTd) + ')';
+  });
+}
+
 function updateDCSParamBox(Kc, Ti, Td) {
   const dcs = DCS_SEL;
   const cfg = DCS_CFG[dcs] || DCS_CFG.yokogawa;
@@ -739,7 +763,8 @@ function renderKPIs(mNew, mCur) {
 // ══════════════════════════════════════════
 function onSlider(key, val) {
   TUNED[key]=+val;
-  document.getElementById('sl-'+key+'-val').textContent=(+val).toFixed(3);
+  const Kc=TUNED.p, Ti=TUNED.i, Td=TUNED.d;
+  document.getElementById('sl-'+key+'-val').textContent = dcsDisplayVal(key, Kc, Ti, Td);
   redraw();
 }
 
@@ -757,8 +782,8 @@ function resetToRecommended() {
   TUNED={...REC};
   ['p','i','d'].forEach(k=>{
     document.getElementById('sl-'+k).value=REC[k];
-    document.getElementById('sl-'+k+'-val').textContent=REC[k];
   });
+  refreshSliderDisplay();
   redraw();
   showToast('🔄 추천값으로 초기화됨');
 }
@@ -777,15 +802,11 @@ window.addEventListener('load', () => {
       const {kc, ti, td} = payload.rec;
       REC   = { p: kc,  i: ti, d: td };
       TUNED = { p: kc,  i: ti, d: td };
-      // Slider values
+      // Slider values (내부값 세팅 - 표시는 applyDCSLabels 후 refreshSliderDisplay에서)
       ['p','i','d'].forEach(k => {
         const v = REC[k];
         const el = document.getElementById('sl-'+k);
-        const valEl = document.getElementById('sl-'+k+'-val');
-        const recEl = document.getElementById('sl-'+k+'-rec');
-        if (el)    { el.value = v; el.max = Math.max(+el.max, v*3).toFixed(3); }
-        if (valEl) valEl.textContent = (+v).toFixed(3);
-        if (recEl) recEl.textContent = '(추천: '+(+v).toFixed(3)+')';
+        if (el) { el.value = v; el.max = Math.max(+el.max, v*3).toFixed(3); }
       });
     }
     // DCS 설정
@@ -840,6 +861,7 @@ window.addEventListener('load', () => {
 
   // DCS 레이블 무조건 적용 (try 성공/실패 무관)
   applyDCSLabels(DCS_SEL);
+  refreshSliderDisplay();   // DCS 변환값으로 표시값 갱신
   initCharts();
   redraw();
 });
