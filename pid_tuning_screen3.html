@@ -543,17 +543,17 @@ const DCS_DEFS = {
   honeywell: {
     name:'Honeywell Experion PKS',
     params:[
-      {key:'P', dcsName:'GAIN',  unit:'(무단위)',         prev:1.50},
-      {key:'I', dcsName:'RSET',  unit:'rep/min',          prev:0.31},
-      {key:'D', dcsName:'RATE',  unit:'min',               prev:0.00},
+      {key:'P', dcsName:'GAIN',  unit:'',                  prev:1.50},
+      {key:'I', dcsName:'RSET',  unit:'sec/rep',           prev:192},
+      {key:'D', dcsName:'RATE',  unit:'sec',               prev:0},
     ]
   },
   yokogawa: {
     name:'Yokogawa CENTUM VP',
     params:[
-      {key:'P', dcsName:'PB (%)', unit:'%  (PB=100/Kc)',   prev:55.0},
-      {key:'I', dcsName:'TI',    unit:'sec',               prev:210},
-      {key:'D', dcsName:'TD',    unit:'sec',               prev:0},
+      {key:'P', dcsName:'P (%)', unit:'%  (=100/Kc)',      prev:55.0},
+      {key:'I', dcsName:'Ti',    unit:'sec',               prev:210},
+      {key:'D', dcsName:'Td',    unit:'sec',               prev:0},
     ]
   },
   deltav: {
@@ -618,13 +618,15 @@ function calcPID(method, kp, tau, theta, lam) {
 function toDCS(dcs, Kc, Ti, Td) {
   switch(dcs) {
     case 'honeywell':
-      return [Kc, +(1/Ti).toFixed(4), Td]; // GAIN=Kc, RSET=1/Ti(rep/min), RATE=Td(min)
+      return [Kc, +(Ti*60).toFixed(1), +(Td*60).toFixed(1)];    // GAIN=Kc, RSET=Ti×60(sec/rep), RATE=Td×60(sec)
     case 'yokogawa':
-      return [+(100/Kc).toFixed(2), +(Ti*60).toFixed(1), +(Td*60).toFixed(1)]; // PB=100/Kc, TI/TD in seconds
+      return [+(100/Kc).toFixed(2), +(Ti*60).toFixed(1), +(Td*60).toFixed(1)]; // P(%)=100/Kc, Ti(sec)=Ti×60, Td(sec)=Td×60
     case 'deltav':
-      return [Kc, +(Ti*60).toFixed(1), +(Td*60).toFixed(1)]; // sec
+      return [Kc, +(Ti*60).toFixed(1), +(Td*60).toFixed(1)];   // RESET=Ti×60(sec), RATE=Td×60(sec)
     case 'abb':
-      return [Kc, +(Ti*60).toFixed(1), +(Td*60).toFixed(1)]; // sec
+      return [Kc, +(Ti*60).toFixed(1), +(Td*60).toFixed(1)];   // TI=Ti×60(sec), TD=Td×60(sec)
+    default:
+      return [Kc, Ti, Td];
   }
 }
 
@@ -673,7 +675,7 @@ function renderBasisSteps(Kc, Ti, Td) {
     {n:1, text:`IMC 이론에서 비례이득 Kc 계산:<br><span class="math">Kc = (τ + θ/2) / (Kp × (λ + θ/2))</span><br>= (${m.tau} + ${(m.theta/2).toFixed(3)}) / (${m.kp} × (${lam} + ${(m.theta/2).toFixed(3)}))<br>= <span class="result">${Kc}</span>`},
     {n:2, text:`적분시간 Ti 계산:<br><span class="math">Ti = τ + θ/2</span><br>= ${m.tau} + ${(m.theta/2).toFixed(3)} = <span class="result">${Ti} min</span>`},
     {n:3, text:`미분시간 Td 계산:<br><span class="math">Td = (τ × θ/2) / (τ + θ/2)</span><br>= (${m.tau} × ${(m.theta/2).toFixed(3)}) / ${Ti} = <span class="result">${Td} min</span>`},
-    {n:4, text:`DCS 변환 — ${DCS_DEFS[DCS].name}:<br>GAIN = Kc = <span class="result">${Kc}</span> | RSET = 1/Ti = <span class="result">${(1/Ti).toFixed(4)} rep/min</span> | RATE = Td = <span class="result">${Td} min</span>`},
+    {n:4, text:`DCS 변환 — ${DCS_DEFS[DCS].name}:<br>GAIN = Kc = <span class="result">${Kc}</span> | RSET = <span class="result">${Ti} min/rep</span> | RATE = Td = <span class="result">${Td} min</span>`},
     {n:5, text:`λ = ${lam} min ≈ ${(lam/m.theta).toFixed(1)}× Dead Time. 권장 범위(2~5×θ)를 약간 초과하여 <strong>안정성 우선</strong> 설정입니다. 응답 속도를 높이려면 λ를 줄이세요.`}
   ] : METHOD==='zn' ? [
     {n:1, text:`Ziegler-Nichols Step Response 방법:<br><span class="math">Kc = 1.2 × τ / (Kp × θ)</span><br>= 1.2 × ${m.tau} / (${m.kp} × ${m.theta}) = <span class="result">${Kc}</span>`},

@@ -465,14 +465,14 @@ let DCS_SEL = localStorage.getItem('pid_dcs') || 'yokogawa';
 // DCS 파라미터 정의 (표시명, 단위, 변환)
 const DCS_CFG = {
   yokogawa:  { name:'CENTUM VP',
-    p:{lbl:'PB',   unit:'%',      conv: kc      => (100/kc).toFixed(2) },
-    i:{lbl:'TI',   unit:'sec',    conv: (kc,ti) => (ti*60).toFixed(1)  },
-    d:{lbl:'TD',   unit:'sec',    conv: (kc,ti,td) => (td*60).toFixed(1) },
+    p:{lbl:'P(%)', unit:'%',      conv: kc      => (100/kc).toFixed(2) },
+    i:{lbl:'Ti',   unit:'sec',    conv: (kc,ti) => (ti*60).toFixed(1)  },
+    d:{lbl:'Td',   unit:'sec',    conv: (kc,ti,td) => (td*60).toFixed(1) },
     pTitle:'P — Proportional Band', iTitle:'I — Integral Time', dTitle:'D — Derivative Time' },
   honeywell: { name:'Experion PKS',
     p:{lbl:'GAIN', unit:'',       conv: kc      => kc.toFixed(4) },
-    i:{lbl:'RSET', unit:'rep/min',conv: (kc,ti) => (1/ti).toFixed(4) },
-    d:{lbl:'RATE', unit:'min',    conv: (kc,ti,td) => td.toFixed(4) },
+    i:{lbl:'RSET', unit:'sec/rep',conv: (kc,ti) => (ti*60).toFixed(1) },
+    d:{lbl:'RATE', unit:'sec',    conv: (kc,ti,td) => (td*60).toFixed(1) },
     pTitle:'P — Gain', iTitle:'I — Reset Rate (RSET)', dTitle:'D — Rate (RATE)' },
   deltav:    { name:'DeltaV',
     p:{lbl:'GAIN', unit:'',       conv: kc      => kc.toFixed(4) },
@@ -846,9 +846,9 @@ window.addEventListener('load', () => {
       const dcs = payload.dcs || localStorage.getItem('pid_dcs') || 'yokogawa';
       let chipText = '';
       if (dcs === 'yokogawa') {
-        chipText = 'PB='+(100/kc).toFixed(1)+' · TI='+(ti*60).toFixed(0)+'s · TD='+(td*60).toFixed(0)+'s';
+        chipText = 'P='+(100/kc).toFixed(1)+'% · Ti='+(ti*60).toFixed(0)+'s · Td='+(td*60).toFixed(0)+'s';
       } else if (dcs === 'honeywell') {
-        chipText = 'GAIN='+kc.toFixed(3)+' · RSET='+(1/ti).toFixed(4)+' · RATE='+td.toFixed(3);
+        chipText = 'GAIN='+kc.toFixed(3)+' · RSET='+(ti*60).toFixed(0)+'s · RATE='+(td*60).toFixed(0)+'s';
       } else if (dcs === 'deltav') {
         chipText = 'GAIN='+kc.toFixed(3)+' · RESET='+(ti*60).toFixed(0)+'s · RATE='+(td*60).toFixed(0)+'s';
       } else {
