@@ -636,8 +636,8 @@
             <tr>
               <td><span class="badge-dcs yok">Yokogawa CENTUM VP</span></td>
               <td class="mono">P (%) = 100 / Kc</td>
-              <td class="mono">Ti (min) = Ti</td>
-              <td class="mono">Td (min) = Td</td>
+              <td class="mono">Ti (sec) = Ti×60</td>
+              <td class="mono">Td (sec) = Td×60</td>
             </tr>
             <tr>
               <td><span class="badge-dcs dv">Emerson DeltaV</span></td>
@@ -668,11 +668,13 @@
       </div>
 
       <div class="formula-card">
-        <div class="formula-name">Integral 단위 변환 (min ↔ sec/rep)</div>
+        <div class="formula-name">Integral / Derivative 단위 변환 요약</div>
         <div class="math-block">
-          <span class="eq">RESET [sec/rep] = Ti [min] × 60</span>
-          <span class="eq">RSET  [min/rep] = Ti [min] <span class="comment">&nbsp;&nbsp;(직접 입력 — Honeywell)</span></span>
-          <span class="eq comment">※ "rep" = repeat = 반복. min/rep = 적분 동작이 비례 동작만큼 보충하는 데 걸리는 시간</span>
+          <span class="eq"><strong>Honeywell</strong> — RSET [min/rep] = Ti [min] &nbsp;<span class="comment">(변환 없음)</span></span>
+          <span class="eq"><strong>Honeywell</strong> — RATE [min] = Td [min] &nbsp;<span class="comment">(변환 없음)</span></span>
+          <span class="eq"><strong>Yokogawa / DeltaV / ABB</strong> — I [sec] = Ti [min] × 60</span>
+          <span class="eq"><strong>Yokogawa / DeltaV / ABB</strong> — D [sec] = Td [min] × 60</span>
+          <span class="eq comment">※ "rep" = repeat. min/rep = 적분 동작이 비례 동작을 한 번 보충하는 데 걸리는 시간</span>
         </div>
       </div>
     </section>
